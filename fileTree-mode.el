@@ -130,6 +130,7 @@
                           (interactive)
                           (fileTree-toggle-info-buffer t)))
     (define-key map (kbd "C-.") 'fileTree-toggle-flat-vs-tree)
+    (define-key map "s" 'fileTree-helm-filter)
     map)
   "Keymap for fileTree.")
 
@@ -599,18 +600,18 @@
         (let ((searchString (concat "* [[" current-file-name "]")))
           (find-file fileTree-notes-file)
           (widen)
-          (beginning-of-buffer)
+          (goto-char (point-min))
           (unless (search-forward searchString nil t)
             (if fileTree-create-new-entry
                 (progn
                   (message "creating new entry")
-                  (end-of-buffer)
+                  (goto-char (point-max))
                   (let ((filename (car (last (split-string current-file-name "/") 1))))
                     (insert (concat "\n" "* [[" current-file-name "][" filename "]]\n"))))
               (unless (search-forward "* [[No File Note Entry]" nil t)
                   (progn
                     (message "creating No File Note Entry")
-                    (end-of-buffer)
+                    (goto-char (point-max))
                     (fileTree-insert-noNoteEntry)))))
           (org-narrow-to-subtree))
       )
@@ -709,6 +710,42 @@
     (xref--show-xrefs xrefs nil t)
     ))
 
+(defun fileTree-helm-filter ()
+  "Use helm-based filtering on fileTree"
+  (interactive)
+  (setq fileTree-fileListStack-save (copy-sequence fileTree-fileListStack))
+  (add-hook 'helm-after-update-hook
+            #'fileTree-helm-hook)
+  (helm :sources '(fileTree-helm-source)))
+
+(setq fileTree-helm-source
+      '((name . "fileTree")
+        (candidates . fileTree-currentFileList)
+        (action . (("fileTree" . (lambda (candidate)
+                                   (mapc
+                                    'some-action
+                                    (helm-marked-candidates))))))
+        (cleanup . (lambda ()
+                     (remove-hook 'helm-after-update-hook
+                                  #'fileTree-helm-hook)
+                     (setq fileTree-fileListStack fileTree-fileListStack-save)
+                     (fileTree-updateBuffer)
+                     ))
+        (buffer . ("*helm-fileTree-buffer*"))
+        (prompt . ("selection:"))))
+
+(defun some-action (candidate)
+  (loop for cand in (helm-marked-candidates)
+        do
+        (message cand)))
+
+(defun fileTree-helm-hook ()
+  "hook"
+  (interactive)
+  (setq fileTree-currentFileList (car (helm--collect-matches
+                                       (list (helm-get-current-source)))))
+  (fileTree-updateBuffer))
+
 (defun fileTree-showFiles (fileList)
   "Load fileList into current file list and show in tree mode."
   (setq fileTree-currentFileList fileList)
@@ -757,7 +794,7 @@
 (defun fileTree-findFilesWithNotes ()
   "Return list of files with notes"
   (find-file fileTree-notes-file)
-  (beginning-of-buffer)
+  (goto-char (point-min))
   (widen)
   ;; (let ((regexp "\^\\* \\[\\[\\(.*\\)\\]\\[\\(.*\\)\\]")
   (let ((regexp "^\\* \\[\\[\\(.*\\)\\]\\[")
