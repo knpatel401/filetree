@@ -7,9 +7,6 @@ The viewer displays a file list as a directory tree in a special buffer.  The fi
 * File notes
 The file notes enables the user to write and display (org-mode) notes associated with individual files and directories.  The note can be displayed in a side buffer either when cycling through files in the file tree viewer or when the file is open in a buffer.  The notes are kept in a single org-mode file with a heading for each file/directory.
 
-## Motivation
-FileTree started as a way to more easily select files from recentf-list.  The tree structure view and basic filtering operations helped to quickly narrow to the file of interest.  Over time, I've found the structure to be a convenient foundation for building additional functionality for my workflow around.  
-
 ## File Tree Viewer
 
 ### Starting and Exit Viewer
@@ -34,24 +31,28 @@ Within the *FileTree* window the following navigation commands can be used
 | fileTree-prev-branch | TAB         |                 |
 
 ### Filtering, Expanding and View modes
-| Command                       | key map | Comment                              |
-|-------------------------------|---------|--------------------------------------|
-| fileTree-filter               | f       |  <ADD>                               |
-| fileTree-expandDir            | e       |  Add files in directory at point     |
-| fileTree-expandDirRecursively | E       |  Add files in directory at point recursively |
-| fileTree-reduceListBy10       | -       |                                      | 
-| fileTree-pop-fileListStack    | b       | undo prev filter/expansion operation |
-| fileTree-set-maxDepth         | 0-9     | set max depth of tree to view 0=max  |
-| fileTree-cycle-maxDepth       | /       | cycle through max depth              |
-| fileTree-ttoggle-flat-vs-tree | .       | toggle between tree and flat view    |
+| Command                       | key map | Comment                                     |
+|-------------------------------|---------|---------------------------------------------|
+| fileTree-filter               | f       | <ADD>                                       |
+| fileTree-helm-filter          | s       | helm-based search                           |
+| fileTree-expandDir            | e       | Add files in directory at point             |
+| fileTree-expandDirRecursively | E       | Add files in directory at point recursively |
+| fileTree-reduceListBy10       | -       |                                             |
+| fileTree-pop-fileListStack    | b       | undo prev filter/expansion operation        |
+| fileTree-set-maxDepth         | 0-9     | set max depth of tree to view 0=max         |
+| fileTree-cycle-maxDepth       | /       | cycle through max depth                     |
+| fileTree-ttoggle-flat-vs-tree | .       | toggle between tree and flat view           |
+
+Note: the file list is added to a stack after each filtering operations (fileTree-filter, fileTree-helm-filter, fileTree-reduceListBy10), and the filtering operation can be undone by popping off the stack (fileTree-pop-fileListStack).
+
 Selecting (by pressing RETURN or clicking) on a file in the FileTree buffer opens the file.  Selecting on a directory narrows to the chosen subtree.
 
 
 ### Operations
-| Command              | key map | Comment                         |
-|----------------------|---------|---------------------------------|
-| fileTree-grep        | g       | grep over files in current list |
-| dired                | d       |                                 |
+| Command       | key map | Comment                                         |
+|---------------|---------|-------------------------------------------------|
+| fileTree-grep | g       | grep over files in current list                 |
+| dired         | d       | opens a dired session at the directory at point |
 
 ### Customizations
 

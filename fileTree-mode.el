@@ -54,23 +54,42 @@
 (defvar fileTree-default-file-face 'default)
 (defvar fileTree-file-face-list
   '(("\.py$"
-     (:foreground "beige" :background "dark green"))
+     (:foreground "dark green"))
     ("\\(?:\\.[ch]$\\|\\.cpp\\)"
-     (:foreground "white" :background "orange"))
+     (:foreground "orange"))
     ("\.org$"
-     (:foreground "beige" :background "maroon"))
+     (:foreground "maroon"))
     ("\\(?:\\.js\\(?:\\|on\\)\\)"
-     (:foreground "beige" :background "orange"))
+     (:foreground "orange"))
     ("\.pdf$"
-     (:foreground "white" :background "navyblue"))
+     (:foreground "navyblue"))
     ("\.m$"
-     (:foreground "yellow" :background "black"))
-    ("\.lua$" (:foreground "orange" :background "black"))
+     (:foreground "black"))
+    ("\.lua$" (:foreground "black"))
     ("\\(?:\\.e\\(?:l$\\|macs\\)\\)"
-     (:foreground "white" :background "gray30"))
+     (:foreground "gray30"))
     ("\.txt$"
-     (:foreground "beige" :background "gray50"))
-    ("\.cfg$" (:foreground "beige" :background "gray50"))))
+     (:foreground "gray50"))
+    ("\.cfg$" (:foreground "gray50"))))
+;; (defvar fileTree-file-face-list
+;;   '(("\.py$"
+;;      (:foreground "beige" :background "dark green"))
+;;     ("\\(?:\\.[ch]$\\|\\.cpp\\)"
+;;      (:foreground "white" :background "orange"))
+;;     ("\.org$"
+;;      (:foreground "beige" :background "maroon"))
+;;     ("\\(?:\\.js\\(?:\\|on\\)\\)"
+;;      (:foreground "beige" :background "orange"))
+;;     ("\.pdf$"
+;;      (:foreground "white" :background "navyblue"))
+;;     ("\.m$"
+;;      (:foreground "yellow" :background "black"))
+;;     ("\.lua$" (:foreground "orange" :background "black"))
+;;     ("\\(?:\\.e\\(?:l$\\|macs\\)\\)"
+;;      (:foreground "white" :background "gray30"))
+;;     ("\.txt$"
+;;      (:foreground "beige" :background "gray50"))
+;;     ("\.cfg$" (:foreground "beige" :background "gray50"))))
 
 (defvar fileTree-filterList
   '((0 "No Filter" "")
@@ -721,10 +740,6 @@
 (setq fileTree-helm-source
       '((name . "fileTree")
         (candidates . fileTree-currentFileList)
-        (action . (("fileTree" . (lambda (candidate)
-                                   (mapc
-                                    'some-action
-                                    (helm-marked-candidates))))))
         (cleanup . (lambda ()
                      (remove-hook 'helm-after-update-hook
                                   #'fileTree-helm-hook)
@@ -733,11 +748,6 @@
                      ))
         (buffer . ("*helm-fileTree-buffer*"))
         (prompt . ("selection:"))))
-
-(defun some-action (candidate)
-  (loop for cand in (helm-marked-candidates)
-        do
-        (message cand)))
 
 (defun fileTree-helm-hook ()
   "hook"
