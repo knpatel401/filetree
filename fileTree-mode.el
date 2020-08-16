@@ -52,44 +52,44 @@
 (defvar fileTree-showFlatList nil)
 (defvar fileTree-info-window nil)
 (defvar fileTree-default-file-face 'default)
-(defvar fileTree-file-face-list
-  '(("\.py$"
-     (:foreground "dark green"))
-    ("\\(?:\\.[ch]$\\|\\.cpp\\)"
-     (:foreground "orange"))
-    ("\.org$"
-     (:foreground "maroon"))
-    ("\\(?:\\.js\\(?:\\|on\\)\\)"
-     (:foreground "orange"))
-    ("\.pdf$"
-     (:foreground "navyblue"))
-    ("\.m$"
-     (:foreground "black"))
-    ("\.lua$" (:foreground "black"))
-    ("\\(?:\\.e\\(?:l$\\|macs\\)\\)"
-     (:foreground "gray30"))
-    ("\.txt$"
-     (:foreground "gray50"))
-    ("\.cfg$" (:foreground "gray50"))))
 ;; (defvar fileTree-file-face-list
 ;;   '(("\.py$"
-;;      (:foreground "beige" :background "dark green"))
+;;      (:foreground "dark green"))
 ;;     ("\\(?:\\.[ch]$\\|\\.cpp\\)"
-;;      (:foreground "white" :background "orange"))
+;;      (:foreground "orange"))
 ;;     ("\.org$"
-;;      (:foreground "beige" :background "maroon"))
+;;      (:foreground "maroon"))
 ;;     ("\\(?:\\.js\\(?:\\|on\\)\\)"
-;;      (:foreground "beige" :background "orange"))
+;;      (:foreground "orange"))
 ;;     ("\.pdf$"
-;;      (:foreground "white" :background "navyblue"))
+;;      (:foreground "navyblue"))
 ;;     ("\.m$"
-;;      (:foreground "yellow" :background "black"))
-;;     ("\.lua$" (:foreground "orange" :background "black"))
+;;      (:foreground "black"))
+;;     ("\.lua$" (:foreground "black"))
 ;;     ("\\(?:\\.e\\(?:l$\\|macs\\)\\)"
-;;      (:foreground "white" :background "gray30"))
+;;      (:foreground "gray30"))
 ;;     ("\.txt$"
-;;      (:foreground "beige" :background "gray50"))
-;;     ("\.cfg$" (:foreground "beige" :background "gray50"))))
+;;      (:foreground "gray50"))
+;;     ("\.cfg$" (:foreground "gray50"))))
+(defvar fileTree-file-face-list
+  '(("\.py$"
+     (:foreground "beige" :background "dark green"))
+    ("\\(?:\\.[ch]$\\|\\.cpp\\)"
+     (:foreground "white" :background "orange"))
+    ("\.org$"
+     (:foreground "beige" :background "maroon"))
+    ("\\(?:\\.js\\(?:\\|on\\)\\)"
+     (:foreground "beige" :background "orange"))
+    ("\.pdf$"
+     (:foreground "white" :background "navyblue"))
+    ("\.m$"
+     (:foreground "yellow" :background "black"))
+    ("\.lua$" (:foreground "orange" :background "black"))
+    ("\\(?:\\.e\\(?:l$\\|macs\\)\\)"
+     (:foreground "white" :background "gray30"))
+    ("\.txt$"
+     (:foreground "beige" :background "gray50"))
+    ("\.cfg$" (:foreground "beige" :background "gray50"))))
 
 (defvar fileTree-filterList
   '((0 "No Filter" "")
@@ -463,7 +463,8 @@
                     (setq thisType (car (car dirContents))))
                 ;; combine dirname if no branching
 				(while (and (= (length dirContents) 1)
-							(equal thisType "dir"))
+							(equal thisType "dir")
+                            (equal (car (car dirContents)) "dir"))
 				  (setq thisEntry (car dirContents))
 				  (setq thisType (car thisEntry))
 				  (setq thisName (nth 1 thisEntry))
