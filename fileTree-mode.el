@@ -50,6 +50,7 @@
 (defvar fileTree-currentFileList nil)
 (defvar fileTree-fileListStack nil)
 (defvar fileTree-showFlatList nil)
+(defvar fileTree-combineDirNames t)
 (defvar fileTree-info-window nil)
 (defvar fileTree-default-file-face 'default)
 ;; (defvar fileTree-file-face-list
@@ -133,7 +134,7 @@
     (define-key map "9" '(lambda () (interactive) (fileTree-set-maxDepth 9)))
     (define-key map "r" 'fileTree-showRecentfFiles)
     (define-key map "f" 'fileTree-filter)
-    (define-key map "/" 'fileTree-cycle-maxDepth)
+    (define-key map "/" 'fileTree-toggle-combineDirNames)
     (define-key map "b" 'fileTree-pop-fileListStack)
     (define-key map "g" 'fileTree-grep)
     (define-key map "d" '(lambda () (interactive) (dired (fileTree-getName))))
@@ -174,7 +175,7 @@
 									 myFileTree-regex
 									 (file-name-nondirectory x))
 									x nil))
-								fileTree-currentFileList)))
+								                       fileTree-currentFileList)))
 	(fileTree-updateBuffer)))
 	
 (defun fileTree-getName ()
@@ -420,6 +421,14 @@
 	(setq fileTree-showFlatList t))
   (fileTree-updateBuffer))
 
+(defun fileTree-toggle-combineDirNames ()
+  "Toggle combine dir names"
+  (interactive)
+  (if fileTree-combineDirNames
+      (setq fileTree-combineDirNames nil)
+	(setq fileTree-combineDirNames t))
+  (fileTree-updateBuffer))
+
 (defun fileTree-print-tree (dirTree depthList)
   "Print dirTree as tree."
   (interactive)
@@ -462,18 +471,19 @@
                 (if (= (length dirContents) 1)
                     (setq thisType (car (car dirContents))))
                 ;; combine dirname if no branching
-				(while (and (= (length dirContents) 1)
-							(equal thisType "dir")
-                            (equal (car (car dirContents)) "dir"))
-				  (setq thisEntry (car dirContents))
-				  (setq thisType (car thisEntry))
-				  (setq thisName (nth 1 thisEntry))
-				  (if (equal thisType "dir")
-					  (progn
-						;; (insert (concat "/"  thisName))
-						(setq fileTree-dirString (concat fileTree-dirString
-															  "/"  thisName))
-						(setq dirContents (nth 2 thisEntry)))))
+                (if fileTree-combineDirNames
+				    (while (and (= (length dirContents) 1)
+    							(equal thisType "dir")
+                                (equal (car (car dirContents)) "dir"))
+    				  (setq thisEntry (car dirContents))
+    				  (setq thisType (car thisEntry))
+    				  (setq thisName (nth 1 thisEntry))
+    				  (if (equal thisType "dir")
+    					  (progn
+    						;; (insert (concat "/"  thisName))
+    						(setq fileTree-dirString (concat fileTree-dirString
+    															  "/"  thisName))
+    						(setq dirContents (nth 2 thisEntry))))))
 		  	  	(insert-text-button fileTree-dirString
 									'face 'bold
 									'action (lambda (x) (fileTree-narrow
@@ -650,7 +660,8 @@
 
 (defun fileTree-updateBuffer ()
   "Update the display buffer (following some change)."
-  (interactive)
+  (interactive)  
+  (setq text-scale-previous (buffer-local-value 'text-scale-mode-amount (current-buffer)))
   (save-current-buffer
 	(with-current-buffer (get-buffer-create fileTree-buffer-name)
 	  (setq buffer-read-only nil)
@@ -675,8 +686,9 @@
 	  (switch-to-buffer fileTree-buffer-name)
 	  (fileTree-goto-name fileTree-currentName)
 	  (setq buffer-read-only t)
-	  (fileTree))
-	))
+	  (fileTree)
+      (text-scale-increase text-scale-previous)
+      )))
 
 (defun fileTree-pop-fileListStack ()
   "Pop last state from stack"
