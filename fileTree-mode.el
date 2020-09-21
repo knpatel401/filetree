@@ -26,8 +26,7 @@
 ;;; Code:
 (require 'recentf)
 (require 'dash)
-(require 'grep)
-;;(declare-function xref--show-xrefs "xref")
+;;(require 'grep)
 
 (defgroup fileTree nil
   "Tree view of file list and file notes"
@@ -725,22 +724,16 @@
   "Run grep on files in currentFileList
    (copied from dired-do-find-regexp) "
   (interactive)
+  (require 'xref)
   (setq myFileTree-regex (read-string "Type search string:"))
-  (defvar grep-find-ignored-files)
-  (defvar grep-find-ignored-directories)
-  (let* ((ignores (nconc (mapcar (lambda (s) (concat s "/"))
-                                grep-find-ignored-directories)
-                        grep-find-ignored-files))
-        (xrefs (mapcan
-                (lambda (file)
-                  (xref-collect-matches myFileTree-regex "*" file
-                                        (and (file-directory-p file)
-                                             ignores)))
-                (-filter 'file-exists-p fileTree-currentFileList))))
-    (unless xrefs
-      (user-error "No matches for: %s" myFileTree-regex))
-    (xref--show-xrefs xrefs nil t)
-    ))
+  (let* ((fetcher
+          (lambda ()
+            (setq xrefs (xref-matches-in-files myFileTree-regex
+                                               (-filter 'file-exists-p fileTree-currentFileList)))
+            (unless xrefs
+              (user-error "No matches for: %s" myFileTree-regex))
+            xrefs)))
+    (xref--show-xrefs fetcher nil)))
 
 (defun fileTree-helm-filter ()
   "Use helm-based filtering on fileTree"
