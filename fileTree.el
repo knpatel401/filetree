@@ -154,8 +154,8 @@
   "Keymap for fileTree.")
 
 (defun fileTree-filter ()
-  "Interactive function to filter fileTree-currentFileList
-   using regular expression in fileTree-filterList or by expression entered by user"
+  "Interactive function to filter 'fileTree-currentFileList'.
+Uses regular expression in 'fileTree-filterList' or by expression entered by user."
   (interactive)
   ;; (setq fileTree-charInput (read-char))
   (let ((myFileTree-mode-filterList fileTree-filterList)
@@ -178,20 +178,25 @@
 	(fileTree-updateBuffer)))
 	
 (defun fileTree-getName ()
-  "Get name of file/dir on line at current point"
+  "Get name of file/dir on line at current point."
   (interactive)
   (if (button-at (point))
 	  (button-get (button-at (point)) 'name)
 	nil))
 
 (defun fileTree-expandDir (dir &optional filter)
-  "Interactive function to add files in directory at point to fileTree-currentFileList
-   using regular expression in fileTree-filterList or by expression entered by user"
+  "Interactive func to add files in DIR to 'fileTree-currentFileList'.
+If FILTER is not specified, will 'read-char' from user.  The corresponding
+regular expression in 'fileTree-filterList' will be used to filter which files
+are included.  If FILTER does not correspond to an entry in
+'fileTree-filterList' the user is prompted for a string/regular expression to
+filter with."
   (interactive)
-  (setq fileTree-charInput (or filter (read-char)))
-  (let ((myFileTree-mode-filterList fileTree-filterList)
+  (let ((fileTree-charInput (or filter (read-char)))
+        (myFileTree-mode-filterList fileTree-filterList)
         (fileTree-newFiles nil)
-		(myFileTree-regex nil))
+		(myFileTree-regex nil)
+        (fileTree-elem nil))
 	(while (/= (length myFileTree-mode-filterList) 0)
 	  (setq fileTree-elem (car myFileTree-mode-filterList))
 	  (if (eq fileTree-charInput (car fileTree-elem))
@@ -210,7 +215,7 @@
                                                             (concat (car x) "/")))
                                                       nil))
                                                 (directory-files-and-attributes dir t))))
-    (dolist (entry fileTree-excludeList) 
+    (dolist (entry fileTree-excludeList)
                    (setq fileTree-newFiles (delete nil (mapcar #'(lambda (x)
                                                                    (if (string-match
                                                                         entry
@@ -225,13 +230,18 @@
   (fileTree-updateBuffer))
 
 (defun fileTree-expandDirRecursively (dir &optional filter)
-  "Interactive function to add files in directory (recursively) at point to fileTree-currentFileList
-   using regular expression in fileTree-filterList or by expression entered by user"
+  "Interactive func to (recursively) add files in DIR to 'fileTree-currentFileList'.
+If FILTER is not specified, will 'read-char' from user.  The corresponding
+regular expression in 'fileTree-filterList' will be used to filter which files
+are included.  If FILTER does not correspond to an entry in
+'fileTree-filterList' the user is prompted for a string/regular expression to
+filter with."
   (interactive)
-  (setq fileTree-charInput (or filter (read-char)))
-  
-  (let ((myFileTree-mode-filterList fileTree-filterList)
-		(myFileTree-regex nil))
+  (let ((fileTree-charInput (or filter (read-char)))
+        (myFileTree-mode-filterList fileTree-filterList)
+		(myFileTree-regex nil)
+        (fileTree-elem nil)
+        (fileTree-newFiles nil))
 	(while (/= (length myFileTree-mode-filterList) 0)
 	  (setq fileTree-elem (car myFileTree-mode-filterList))
 	  (if (eq fileTree-charInput (car fileTree-elem))
@@ -266,36 +276,36 @@
   (fileTree-updateBuffer))
 	  
 (defun fileTree-cycle-maxDepth ()
-  "Increase depth of file tree by 1 level cycle back to 0 when max depth reached"
+  "Increase depth of file tree by 1 level cycle back to 0 when max depth reached."
   (interactive)
   (setq fileTree-maxDepth (% (+ fileTree-maxDepth 1)
 								  fileTree-overallDepth))
   (fileTree-updateBuffer))
   
 (defun fileTree-set-maxDepth (maxDepth)
-  "Set depth of displayed file tree"
+  "Set depth of displayed file tree to MAXDEPTH."
   (interactive)
   (setq fileTree-maxDepth maxDepth)
   (fileTree-updateBuffer))
 
 (defun fileTree-next-line ()
-  "Go to file/dir on next line"
+  "Go to file/dir on next line."
   (interactive)
   (move-end-of-line 2)
   (re-search-backward " ")
   (fileTree-goto-node))
 
 (defun fileTree-prev-line ()
-  "Go to file/dir on previous line"
+  "Go to file/dir on previous line."
   (interactive)
   (forward-line -1)
   (fileTree-goto-node))
 
 (defun fileTree-goto-node ()
-  "Helper function to move point to item on current line"
+  "Helper function to move point to item on current line."
   (interactive)
   (if (< (point) fileTree-startPosition)
-      (goto-char fileTree-startPosition))  
+      (goto-char fileTree-startPosition))
   (move-end-of-line 1)
   (re-search-backward " ")
   (forward-char)
@@ -305,8 +315,8 @@
     (fileTree-update-info-buffer (fileTree-getName))))
 
 (defun fileTree-next-branch ()
-  "Go to next item at the same or higher level
-   (i.e., got to next branch of tree)"
+  "Go to next item at the same or higher level in the tree.
+In other words go to next branch of tree."
   (interactive)
   (fileTree-goto-node)
   (let ((fileTree-original-line (line-number-at-pos))
@@ -329,8 +339,8 @@
 			(setq fileTree-current-line (line-number-at-pos))))))))
 
 (defun fileTree-prev-branch ()
-  "Go to previous item at the same or higher level
-   (i.e., got to prev branch of tree)"
+  "Go to previous item at the same or higher level in the tree.
+In other wrods go to prev branch of tree."
   (interactive)
   (fileTree-goto-node)
   (let ((fileTree-original-line (line-number-at-pos))
@@ -352,7 +362,7 @@
 			(setq fileTree-current-line (line-number-at-pos))))))))
 
 (defun fileTree-goto-name (name)
-  "Helper function to go to item with given name"
+  "Helper function to go to item with name NAME."
   (let ((fileTree-looking (stringp name))
         (fileTree-end-of-buffer nil)
         (fileTree-newName nil)
@@ -373,7 +383,7 @@
 										
 
 (defun fileTree-add-entry-to-tree (newEntry currentTree)
-  "Add one file to current tree."
+  "Add file NEWENTRY to CURRENTTREE."
   (interactive)
   (if newEntry
 	  (let ((treeHeadEntries (mapcar #'(lambda (x) (list (car x)
@@ -395,7 +405,7 @@
   currentTree)
 
 (defun fileTree-print-flat (fileList)
-  "Print fileList in flat format"
+  "Print FILELIST in flat format."
   (let ((firstFile (car fileList))
 		(remaining (cdr fileList)))
 	(let ((filename (file-name-nondirectory firstFile))
@@ -413,7 +423,7 @@
 		(fileTree-print-flat remaining))))
 
 (defun fileTree-toggle-flat-vs-tree ()
-  "Toggle flat vs. tree view"
+  "Toggle flat vs tree view."
   (interactive)
   (if fileTree-showFlatList
       (setq fileTree-showFlatList nil)
@@ -421,7 +431,7 @@
   (fileTree-updateBuffer))
 
 (defun fileTree-toggle-combineDirNames ()
-  "Toggle combine dir names"
+  "Toggle combine dir names."
   (interactive)
   (if fileTree-combineDirNames
       (setq fileTree-combineDirNames nil)
@@ -429,14 +439,18 @@
   (fileTree-updateBuffer))
 
 (defun fileTree-print-tree (dirTree depthList)
-  "Print dirTree as tree."
+  "Print directory tree.
+Print DIRTREE up to a depth of DEPTHLIST."
   (interactive)
   (let ((myDepthList depthList)
 		(myDirTree dirTree)
 		(myDepthListCopy nil)
-		(curDepth nil))
+		(curDepth nil)
+        (thisType nil)
+        (thisName nil)
+        (thisEntry nil))
 
-	(if (not myDepthList)	
+	(if (not myDepthList)
  		(setq myDepthList (list (- (length myDirTree) 1)))
       (setcdr (last myDepthList)
 					 (list (- (length myDirTree) 1))))
@@ -455,7 +469,8 @@
                                                                    "    "))
                                                    (butlast myDepthList 1)) ""))
 
-                    (dirContents (nth 2 thisEntry)))
+                    (dirContents (nth 2 thisEntry))
+                    (fileTree-dirString nil))
                     ;; (thisType (car (nth 2 thisEntry))))
 		  	  	(insert myPrefix)
 				(if (> (length myDepthList) 1)
@@ -505,7 +520,7 @@
 			  (if (> (car (last myDepthList)) 0)
                   ;; file and continue
 		  		  (setq myPrefix (concat myPrefix " \u251c" "\u2500\u25cf "))
-                ;; last file 
+                ;; last file
 		  		(setq myPrefix (concat myPrefix " \u2514" "\u2500\u25cf ")))
 
 			  (insert myPrefix)
@@ -521,7 +536,7 @@
 	  (setq myDirTree (cdr myDirTree))))))
 
 (defun fileTree-printHeader ()
-  "Print header at top of window"
+  "Print header at top of window."
   (insert (concat "\u2502 "
                   (propertize "# files: " 'font-lock-face 'bold)
                   (number-to-string (length fileTree-currentFileList))
@@ -540,12 +555,12 @@
 
 
 (defun fileTree-createSingleNodeTree (filename)
-  "Create a tree for filename"
+  "Create a tree for FILENAME."
   (setq filenameList (reverse (cdr (split-string
 									filename "/"))))
   (setq singleNodeTree
 		(if (equal (car filenameList) "")
-			nil 
+			nil
 		  (list "file" (car filenameList) filename)))
   (setq filenameList (cdr filenameList))
   (while (/= (length filenameList) 0)
@@ -560,7 +575,7 @@
   singleNodeTree)
 
 (defun fileTree-createFileTree (filelist &optional curTree)
-  "Create a tree for fileList and add it to curTree (or create new tree if not given)"
+  "Create a tree for FILELIST and add it to CURTREE (or create new tree if not given)."
   (interactive)
   (setq newTree (or curTree ()))
   (while (/= (length filelist) 0)
@@ -573,7 +588,7 @@
 
 
 (defun fileTree-createFileList (fileTree)
-  "Create a list of files from a fileTree"
+  "Create a list of files from FILETREE."
   (if (listp fileTree)
 	  (progn
 		(-flatten (mapcar #'(lambda (x) (if (eq (car x) "file")
@@ -583,8 +598,8 @@
     fileTree ))
 
 (defun fileTree-update-or-open-info-buffer()
-  "Update info buffer based on current buffer.  
-   Open info buffer if not already open,."
+  "Update info buffer based on current buffer.
+Open info buffer if not already open."
   (interactive)
   (if (and (buffer-live-p fileTree-info-buffer)
            (window-live-p fileTree-info-window))
@@ -592,7 +607,8 @@
   (fileTree-toggle-info-buffer)))
 
 (defun fileTree-toggle-info-buffer (&optional switchToInfoFlag)
-  "Toggle info buffer in side window"
+  "Toggle info buffer in side window.
+If SWITCHTOINFOFLAG is true, then swithc to the info window afterwards."
   (interactive)
   (let ((file-for-info-buffer (if (string-equal (buffer-name) fileTree-buffer-name)
                                   (fileTree-getName)
@@ -617,7 +633,9 @@
             (select-window fileTree-info-window))))))
 
 (defun fileTree-update-info-buffer (&optional current-file-name)
-  "Update info buffer with current file"
+  "Update info buffer contents to reflect CURRENT-FILE-NAME.
+If CURENT-FILE-NAME not given use 'buffer-file-name'.
+If no entry in info buffer for this file, create new info buffer entry."
   ;; TODO: clean up
   (setq fileTree-create-new-entry (if current-file-name nil t))
   (unless current-file-name (setq current-file-name (buffer-file-name)))
@@ -649,7 +667,9 @@
   )
 
 (defun fileTree-insert-noNoteEntry ()
-  (insert (concat "\n* [[No File Note Entry]]\n" 
+  "Insert a entry in info file indicating not file note entry.
+This is used when first starting a info note file."
+  (insert (concat "\n* [[No File Note Entry]]\n"
                   (propertize (concat "\u250c"
                                       (make-string 9 ?\u2500)
                                       "\u2510\n\u2502 NO NOTE \u2502\n\u2514"
@@ -659,7 +679,7 @@
 
 (defun fileTree-updateBuffer ()
   "Update the display buffer (following some change)."
-  (interactive)  
+  (interactive)
   (setq text-scale-previous (buffer-local-value 'text-scale-mode-amount (current-buffer)))
   (save-current-buffer
 	(with-current-buffer (get-buffer-create fileTree-buffer-name)
@@ -690,7 +710,7 @@
       )))
 
 (defun fileTree-pop-fileListStack ()
-  "Pop last state from stack"
+  "Pop last state from stack."
   (interactive)
   (if (> (length fileTree-fileListStack) 1)
 	  (setq fileTree-fileListStack (cdr fileTree-fileListStack)))
@@ -702,15 +722,17 @@
   
 
 (defun fileTree-narrow (subtree)
-  "Narrow file tree to subtree"
+  "Narrow file tree to SUBTREE."
   (setq fileTree-currentFileList (fileTree-createFileList (list subtree)))
   (fileTree-updateBuffer))
 
 (defun fileTree-file-face (filename)
-  "Return face to use for filename from info in fileTree-file-face-list
-   and fileTree-default-file-face."
+  "Return face to use for FILENAME.
+Info determined from 'fileTree-file-face-list' and 'fileTree-default-file-face'."
   (let ((file-face fileTree-default-file-face)
-		(my-file-face-list fileTree-file-face-list))
+		(my-file-face-list fileTree-file-face-list)
+        (elem nil)
+        (fileTree-regex nil))
 	(while (/= (length my-file-face-list) 0)
 	  (setq elem (car my-file-face-list))
 	  (setq fileTree-regex (car elem))
@@ -721,8 +743,7 @@
 	file-face))
 
 (defun fileTree-grep ()
-  "Run grep on files in currentFileList
-   (copied from dired-do-find-regexp) "
+  "Run grep on files in 'currentFileList'."
   (interactive)
   (require 'xref)
   (setq myFileTree-regex (read-string "Type search string:"))
@@ -736,7 +757,7 @@
     (xref--show-xrefs fetcher nil)))
 
 (defun fileTree-helm-filter ()
-  "Use helm-based filtering on fileTree"
+  "Use helm-based filtering on fileTree."
   (interactive)
   (setq fileTree-fileListStack-save (copy-sequence fileTree-fileListStack))
   (add-hook 'helm-after-update-hook
@@ -756,14 +777,14 @@
         (prompt . ("selection:"))))
 
 (defun fileTree-helm-hook ()
-  "hook"
+  "Helm hook for fileTree."
   (interactive)
   (setq fileTree-currentFileList (car (helm--collect-matches
                                        (list (helm-get-current-source)))))
   (fileTree-updateBuffer))
 
 (defun fileTree-showFiles (fileList)
-  "Load fileList into current file list and show in tree mode."
+  "Load FILELIST into current file list and show in tree mode."
   (setq fileTree-currentFileList fileList)
   (setq fileTree-fileListStack (list fileTree-currentFileList))
   (fileTree-updateBuffer)
@@ -798,7 +819,7 @@
         (myFileList ()))
     (while myBufferList
       (setq myBuffer (car myBufferList))
-      (setq myBufferList (cdr myBufferList))   
+      (setq myBufferList (cdr myBufferList))
       (if (buffer-file-name myBuffer)
           (setq myFileList (cons (buffer-file-name myBuffer)
                                  myFileList)))
@@ -808,7 +829,7 @@
     ))
 
 (defun fileTree-findFilesWithNotes ()
-  "Return list of files with notes"
+  "Return list of files with notes."
   (find-file fileTree-notes-file)
   (goto-char (point-min))
   (widen)
