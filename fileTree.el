@@ -26,7 +26,10 @@
 ;;; Code:
 (require 'recentf)
 (require 'dash)
-;;(require 'grep)
+(require 'xref)
+(require 'helm)
+(require 'rect)
+(require 'org)
 
 (defgroup fileTree nil
   "Tree view of file list and file notes"
@@ -38,7 +41,7 @@
 (defconst fileTree-buffer-name "*FileTree*")
 ;;(defconst fileTree-info-buffer-name "*FileTree-Info*")
 
-(defvar fileTree-notes-file "~/plans/notes.org")
+(defvar fileTree-notes-file "~/.emacs.d/fileTree-notes.org")
 (defvar fileTree-info-buffer nil)
 (defvar fileTree-info-buffer-state nil)
 
@@ -48,10 +51,22 @@
 (defvar fileTree-overallDepth nil)
 (defvar fileTree-currentFileList nil)
 (defvar fileTree-fileListStack nil)
+(defvar fileTree-fileListStack-save nil)
 (defvar fileTree-showFlatList nil)
 (defvar fileTree-combineDirNames t)
 (defvar fileTree-info-window nil)
 (defvar fileTree-default-file-face 'default)
+(defvar fileTree-helm-source
+  '((name . "fileTree")
+    (candidates . fileTree-currentFileList)
+    (cleanup . (lambda ()
+                 (remove-hook 'helm-after-update-hook
+                              #'fileTree-helm-hook)
+                 (setq fileTree-fileListStack fileTree-fileListStack-save)
+                 (fileTree-updateBuffer)))
+    (buffer . ("*helm-fileTree-buffer*"))
+    (prompt . ("selection:"))))
+  
 ;; (defvar fileTree-file-face-list
 ;;   '(("\.py$"
 ;;      (:foreground "dark green"))
@@ -118,8 +133,6 @@
     (define-key map (kbd "C-k") 'fileTree-prev-line)
     (define-key map (kbd "SPC") 'fileTree-next-branch)
     (define-key map (kbd "TAB") 'fileTree-prev-branch)
-    ;; (define-key map "C-j" 'fileTree-next-branch)
-    ;; (define-key map "C-k" 'fileTree-prev-branch)
     (define-key map "q" 'recentf-cancel-dialog)
     (define-key map "0" '(lambda () (interactive) (fileTree-set-maxDepth 0)))
     (define-key map "1" '(lambda () (interactive) (fileTree-set-maxDepth 1)))
@@ -157,7 +170,6 @@
   "Interactive function to filter 'fileTree-currentFileList'.
 Uses regular expression in 'fileTree-filterList' or by expression entered by user."
   (interactive)
-  ;; (setq fileTree-charInput (read-char))
   (let ((myFileTree-mode-filterList fileTree-filterList)
 		(myFileTree-regex nil)
         (fileTree-elem nil)
@@ -185,7 +197,7 @@ Uses regular expression in 'fileTree-filterList' or by expression entered by use
 	nil))
 
 (defun fileTree-expandDir (dir &optional filter)
-  "Interactive func to add files in DIR to 'fileTree-currentFileList'.
+  "Add files in DIR to 'fileTree-currentFileList'.
 If FILTER is not specified, will 'read-char' from user.  The corresponding
 regular expression in 'fileTree-filterList' will be used to filter which files
 are included.  If FILTER does not correspond to an entry in
@@ -230,7 +242,7 @@ filter with."
   (fileTree-updateBuffer))
 
 (defun fileTree-expandDirRecursively (dir &optional filter)
-  "Interactive func to (recursively) add files in DIR to 'fileTree-currentFileList'.
+  "Recursively add files in DIR to 'fileTree-currentFileList'.
 If FILTER is not specified, will 'read-char' from user.  The corresponding
 regular expression in 'fileTree-filterList' will be used to filter which files
 are included.  If FILTER does not correspond to an entry in
@@ -553,39 +565,36 @@ Print DIRTREE up to a depth of DEPTHLIST."
   (insert "\u2518\n")
   (setq fileTree-startPosition (point)))
 
-
 (defun fileTree-createSingleNodeTree (filename)
   "Create a tree for FILENAME."
-  (setq filenameList (reverse (cdr (split-string
-									filename "/"))))
-  (setq singleNodeTree
-		(if (equal (car filenameList) "")
-			nil
-		  (list "file" (car filenameList) filename)))
-  (setq filenameList (cdr filenameList))
-  (while (/= (length filenameList) 0)
-	(setq singleNodeTree (list "dir"
-							   (car filenameList)
-							   (if (not singleNodeTree)
-								   nil
-								 (list singleNodeTree))
-							   (concat "/" (string-join (reverse filenameList) "/"))
-							   ))
-	(setq filenameList (cdr filenameList)))
-  singleNodeTree)
-
+  (let* ((filenameList (reverse (cdr (split-string
+								      filename "/"))))
+         (singleNodeTree
+ 		  (if (equal (car filenameList) "")
+			  nil
+		    (list "file" (car filenameList) filename))))
+    (setq filenameList (cdr filenameList))
+    (while (/= (length filenameList) 0)
+	  (setq singleNodeTree (list "dir"
+							     (car filenameList)
+							     (if (not singleNodeTree)
+								     nil
+								   (list singleNodeTree))
+							     (concat "/" (string-join (reverse filenameList) "/"))
+							     ))
+	  (setq filenameList (cdr filenameList)))
+    singleNodeTree))
+  
 (defun fileTree-createFileTree (filelist &optional curTree)
   "Create a tree for FILELIST and add it to CURTREE (or create new tree if not given)."
   (interactive)
-  (setq newTree (or curTree ()))
-  (while (/= (length filelist) 0)
-	(setq entry (car filelist))
-	(setq curTree (fileTree-add-entry-to-tree (fileTree-createSingleNodeTree entry)
-									 curTree))
-	(setq filelist (cdr filelist))
-	)
-  curTree)
-
+  (let ((entry nil))
+    (while (/= (length filelist) 0)
+	  (setq entry (car filelist))
+	  (setq curTree (fileTree-add-entry-to-tree (fileTree-createSingleNodeTree entry)
+									            curTree))
+	  (setq filelist (cdr filelist)))
+    curTree))
 
 (defun fileTree-createFileList (fileTree)
   "Create a list of files from FILETREE."
@@ -608,7 +617,7 @@ Open info buffer if not already open."
 
 (defun fileTree-toggle-info-buffer (&optional switchToInfoFlag)
   "Toggle info buffer in side window.
-If SWITCHTOINFOFLAG is true, then swithc to the info window afterwards."
+If SWITCHTOINFOFLAG is true, then switch to the info window afterwards."
   (interactive)
   (let ((file-for-info-buffer (if (string-equal (buffer-name) fileTree-buffer-name)
                                   (fileTree-getName)
@@ -637,38 +646,35 @@ If SWITCHTOINFOFLAG is true, then swithc to the info window afterwards."
 If CURENT-FILE-NAME not given use 'buffer-file-name'.
 If no entry in info buffer for this file, create new info buffer entry."
   ;; TODO: clean up
-  (setq fileTree-create-new-entry (if current-file-name nil t))
-  (unless current-file-name (setq current-file-name (buffer-file-name)))
-  (unless current-file-name (setq current-file-name "No File Note Entry"))
-  (let ((current-window (selected-window)))
-    (select-window fileTree-info-window)
-    (switch-to-buffer fileTree-info-buffer)
-    (if (get-buffer-window fileTree-info-buffer)
-        (let ((searchString (concat "* [[" current-file-name "]")))
-          (find-file fileTree-notes-file)
-          (widen)
-          (goto-char (point-min))
-          (unless (search-forward searchString nil t)
-            (if fileTree-create-new-entry
-                (progn
-                  (message "creating new entry")
-                  (goto-char (point-max))
-                  (let ((filename (car (last (split-string current-file-name "/") 1))))
-                    (insert (concat "\n" "* [[" current-file-name "][" filename "]]\n"))))
-              (unless (search-forward "* [[No File Note Entry]" nil t)
+  (let ((fileTree-create-new-entry (if current-file-name nil t)))
+    (unless current-file-name (setq current-file-name (buffer-file-name)))
+    (unless current-file-name (setq current-file-name "No File Note Entry"))
+    (let ((current-window (selected-window)))
+      (select-window fileTree-info-window)
+      (switch-to-buffer fileTree-info-buffer)
+      (if (get-buffer-window fileTree-info-buffer)
+          (let ((searchString (concat "* [[" current-file-name "]")))
+            (find-file fileTree-notes-file)
+            (widen)
+            (goto-char (point-min))
+            (unless (search-forward searchString nil t)
+              (if fileTree-create-new-entry
+                  (progn
+                    (message "creating new entry")
+                    (goto-char (point-max))
+                    (let ((filename (car (last (split-string current-file-name "/") 1))))
+                      (insert (concat "\n" "* [[" current-file-name "][" filename "]]\n"))))
+                (unless (search-forward "* [[No File Note Entry]" nil t)
                   (progn
                     (message "creating No File Note Entry")
                     (goto-char (point-max))
                     (fileTree-insert-noNoteEntry)))))
-          (org-narrow-to-subtree))
-      )
-    (select-window current-window)
-    )
-  )
+            (org-narrow-to-subtree)))
+      (select-window current-window))))
 
 (defun fileTree-insert-noNoteEntry ()
-  "Insert a entry in info file indicating not file note entry.
-This is used when first starting a info note file."
+  "Insert an entry in info file indicating not file note entry.
+This is used when first starting an info note file."
   (insert (concat "\n* [[No File Note Entry]]\n"
                   (propertize (concat "\u250c"
                                       (make-string 9 ?\u2500)
@@ -680,37 +686,35 @@ This is used when first starting a info note file."
 (defun fileTree-updateBuffer ()
   "Update the display buffer (following some change)."
   (interactive)
-  (setq text-scale-previous (buffer-local-value 'text-scale-mode-amount (current-buffer)))
-  (save-current-buffer
-	(with-current-buffer (get-buffer-create fileTree-buffer-name)
-	  (setq buffer-read-only nil)
-	  (setq fileTree-currentName (fileTree-getName))
-	  (erase-buffer)
-      (setq fileTree-currentFileList (-distinct (-non-nil
-                                                      fileTree-currentFileList)))
-	  (setq fileTree-fileListStack (cons (copy-sequence fileTree-currentFileList)
-											  fileTree-fileListStack))
-      (fileTree-printHeader)
-	  (if fileTree-showFlatList
-		  (fileTree-print-flat fileTree-currentFileList)
-		(fileTree-print-tree (fileTree-createFileTree
-								   (reverse fileTree-currentFileList)) ())
-		)
-      (setq fileTree-overallDepth
-           (if (null fileTree-currentFileList)
-               0
-             (apply 'max (mapcar #'(lambda (x) (length (split-string x "/")))
-								 fileTree-currentFileList))))
-      ;; (fileTree-update-info-buffer fileTree-buffer-name)
-	  (switch-to-buffer fileTree-buffer-name)
-	  (fileTree-goto-name fileTree-currentName)
-	  (setq buffer-read-only t)
-	  (fileTree)
-      (text-scale-increase text-scale-previous)
-      )))
+  (let ((text-scale-previous (buffer-local-value 'text-scale-mode-amount
+                                                 (current-buffer))))
+    (save-current-buffer
+	  (with-current-buffer (get-buffer-create fileTree-buffer-name)
+        (let ((fileTree-currentName (fileTree-getName)))
+	      (setq buffer-read-only nil)
+	      (erase-buffer)
+          (setq fileTree-currentFileList (-distinct (-non-nil
+                                                     fileTree-currentFileList)))
+	      (setq fileTree-fileListStack (cons (copy-sequence fileTree-currentFileList)
+											 fileTree-fileListStack))
+          (fileTree-printHeader)
+	      (if fileTree-showFlatList
+		      (fileTree-print-flat fileTree-currentFileList)
+		    (fileTree-print-tree (fileTree-createFileTree
+								  (reverse fileTree-currentFileList)) ()))
+          (setq fileTree-overallDepth
+                (if (null fileTree-currentFileList) 0
+                  (apply 'max (mapcar #'(lambda (x) (length (split-string x "/")))
+								      fileTree-currentFileList))))
+          ;; (fileTree-update-info-buffer fileTree-buffer-name)
+	      (switch-to-buffer fileTree-buffer-name)
+	      (fileTree-goto-name fileTree-currentName)
+	      (setq buffer-read-only t)
+	      (fileTree)
+          (text-scale-increase text-scale-previous))))))
 
 (defun fileTree-pop-fileListStack ()
-  "Pop last state from stack."
+  "Pop last state from file list stack."
   (interactive)
   (if (> (length fileTree-fileListStack) 1)
 	  (setq fileTree-fileListStack (cdr fileTree-fileListStack)))
@@ -743,11 +747,12 @@ Info determined from 'fileTree-file-face-list' and 'fileTree-default-file-face'.
 	file-face))
 
 (defun fileTree-grep ()
-  "Run grep on files in 'currentFileList'."
+  "Run grep on files in 'currentFileList'.
+Takes input from user for grep pattern."
   (interactive)
-  (require 'xref)
-  (setq myFileTree-regex (read-string "Type search string:"))
-  (let* ((fetcher
+  (let* ((myFileTree-regex (read-string "Type search string:"))
+         (xrefs nil)
+         (fetcher
           (lambda ()
             (setq xrefs (xref-matches-in-files myFileTree-regex
                                                (-filter 'file-exists-p fileTree-currentFileList)))
@@ -763,18 +768,6 @@ Info determined from 'fileTree-file-face-list' and 'fileTree-default-file-face'.
   (add-hook 'helm-after-update-hook
             #'fileTree-helm-hook)
   (helm :sources '(fileTree-helm-source)))
-
-(setq fileTree-helm-source
-      '((name . "fileTree")
-        (candidates . fileTree-currentFileList)
-        (cleanup . (lambda ()
-                     (remove-hook 'helm-after-update-hook
-                                  #'fileTree-helm-hook)
-                     (setq fileTree-fileListStack fileTree-fileListStack-save)
-                     (fileTree-updateBuffer)
-                     ))
-        (buffer . ("*helm-fileTree-buffer*"))
-        (prompt . ("selection:"))))
 
 (defun fileTree-helm-hook ()
   "Helm hook for fileTree."
