@@ -30,6 +30,7 @@
 (require 'helm)
 (require 'rect)
 (require 'org)
+(require 'cl-lib)
 
 (defgroup fileTree nil
   "Tree view of file list and file notes"
@@ -151,9 +152,11 @@
     (define-key map "g" 'fileTree-grep)
     (define-key map "d" '(lambda () (interactive) (dired (fileTree-getName))))
     (define-key map "e" '(lambda () (interactive) (fileTree-expandDir
-                                                                 (fileTree-getName))))
+                                                   (fileTree-getName))))
     (define-key map "E" '(lambda () (interactive) (fileTree-expandDirRecursively
-                                                                 (fileTree-getName))))
+                                                   (fileTree-getName))))
+    (define-key map "x" '(lambda () (interactive) (fileTree-remove-item
+                                                   (fileTree-getName))))
     (define-key map "-" 'fileTree-reduceListBy10)
     (define-key map "." 'fileTree-toggle-flat-vs-tree)
     (define-key map "i" 'fileTree-toggle-info-buffer)
@@ -188,7 +191,30 @@ Uses regular expression in 'fileTree-filterList' or by expression entered by use
 									x nil))
 								                       fileTree-currentFileList)))
 	(fileTree-updateBuffer)))
-	
+
+(defun fileTree-remove-item (file_or_dir)
+  "Remove the file or subdir ENTRY from the fileTree-currentFileList."
+  (interactive)
+  (print file_or_dir)
+  (setq fileTree-currentFileList (delete nil
+                                         (if (string= "/"
+                                                      (substring file_or_dir -1))
+                                             ;; removing subdirectory
+                                             (mapcar #'(lambda (x)
+                                                         (if (string-match
+                                                              file_or_dir
+                                                              x)
+									                         nil x))
+								                     fileTree-currentFileList)
+                                           ;; removing file
+                                           (mapcar #'(lambda (x)
+                                                       (if (string=
+                                                            file_or_dir
+                                                            x)
+									                       nil x))
+								                   fileTree-currentFileList))))
+  (fileTree-updateBuffer))
+
 (defun fileTree-getName ()
   "Get name of file/dir on line at current point."
   (interactive)
@@ -389,7 +415,7 @@ In other wrods go to prev branch of tree."
 	  (if (string-equal fileTree-newName name)
 		  (setq fileTree-looking nil)
 		(fileTree-next-line)))
-	(if fileTree-looking
+	(if fileTree-end-of-buffer
 		(goto-char (point-min)))
 	(fileTree-goto-node)))
 										
@@ -514,7 +540,8 @@ Print DIRTREE up to a depth of DEPTHLIST."
 									'face 'bold
 									'action (lambda (x) (fileTree-narrow
 														 (button-get x 'subtree)))
-									'name (nth 3 thisEntry)
+									;; 'name (nth 3 thisEntry)
+									'name (concat (nth 3 thisEntry) "/")
 									'subtree thisEntry)
 			  	(insert "/\n")
 		  	  	(setq myDepthListCopy (copy-tree myDepthList))
