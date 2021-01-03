@@ -43,9 +43,18 @@
 ;;(defconst fileTree-info-buffer-name "*FileTree-Info*")
 
 (defvar fileTree-notes-file "~/.emacs.d/fileTree-notes.org")
+
 (defvar fileTree-info-buffer nil)
 (defvar fileTree-info-buffer-state nil)
 
+(defvar fileTree-saved-lists-file "~/.emacs.d/fileTree-saved-lists.el")
+(defvar fileTree-saved-lists '(("recentf" (lambda ()
+                                            recentf-list))))
+(if (file-exists-p fileTree-saved-lists-file)
+    (with-temp-buffer ;;(get-buffer-create "*fileTree-temp*")
+      (insert-file-contents fileTree-saved-lists-file)
+      (eval-buffer)))
+  
 ;; (setq fileTree-abbrevDirs nil)
 (defvar fileTree-startPosition 0)
 (defvar fileTree-maxDepth 0)
@@ -68,55 +77,19 @@
     (buffer . ("*helm-fileTree-buffer*"))
     (prompt . ("selection:"))))
   
-;; (defvar fileTree-file-face-list
-;;   '(("\.py$"
-;;      (:foreground "dark green"))
-;;     ("\\(?:\\.[ch]$\\|\\.cpp\\)"
-;;      (:foreground "orange"))
-;;     ("\.org$"
-;;      (:foreground "maroon"))
-;;     ("\\(?:\\.js\\(?:\\|on\\)\\)"
-;;      (:foreground "orange"))
-;;     ("\.pdf$"
-;;      (:foreground "navyblue"))
-;;     ("\.m$"
-;;      (:foreground "black"))
-;;     ("\.lua$" (:foreground "black"))
-;;     ("\\(?:\\.e\\(?:l$\\|macs\\)\\)"
-;;      (:foreground "gray30"))
-;;     ("\.txt$"
-;;      (:foreground "gray50"))
-;;     ("\.cfg$" (:foreground "gray50"))))
-(defvar fileTree-file-face-list
-  '(("\.py$"
-     (:foreground "beige" :background "dark green"))
-    ("\\(?:\\.[ch]$\\|\\.cpp\\)"
-     (:foreground "white" :background "orange"))
-    ("\.org$"
-     (:foreground "beige" :background "maroon"))
-    ("\\(?:\\.js\\(?:\\|on\\)\\)"
-     (:foreground "beige" :background "orange"))
-    ("\.pdf$"
-     (:foreground "white" :background "navyblue"))
-    ("\.m$"
-     (:foreground "yellow" :background "black"))
-    ("\.lua$" (:foreground "orange" :background "black"))
-    ("\\(?:\\.e\\(?:l$\\|macs\\)\\)"
-     (:foreground "white" :background "gray30"))
-    ("\.txt$"
-     (:foreground "beige" :background "gray50"))
-    ("\.cfg$" (:foreground "beige" :background "gray50"))))
 
-(defvar fileTree-filterList
-  '((0 "No Filter" "")
-    (?p "Python" "\.py$")
-    (?o "Org-mode" "\.org$")
-    (?e "elisp" "\\(?:\\.e\\(?:l\\|macs\\)\\)")
-    (?c "C" "\\(?:\\.[ch]$\\|\\.cpp\\)")
-    (?l "Lua" "\.lua$")
-    (?d "PDF doc" "\.pdf$")
-    (?m "Matlab" "\.m$")))
-
+(defvar fileTree-filetype-list
+  '((0 "No Filter"  ""  ())
+    (?p "Python"    "\.py$"   (:foreground "beige" :background "dark green"))
+    (?o "Org-mode"  "\.org$"  (:foreground "beige" :background "maroon"))
+    (?e "elisp"     "\\(?:\\.e\\(?:l\\|macs\\)\\)"  (:foreground "beige" :background "maroon"))
+    (?c "C"         "\\(?:\\.[ch]$\\|\\.cpp\\)"  (:foreground "white" :background "navyblue"))
+    (?l "Lua"       "\.lua$"  (:foreground "orange" :background "black"))
+    (?d "PDF doc"   "\.pdf$"  (:foreground "beige" :background "orange"))
+    (?m "Matlab"    "\.m$"    (:foreground "white" :background "navyblue"))
+    (?t "Text"      "\.txt$"    (:foreground "beige" :background "gray50"))
+    ))
+    
 (defvar fileTree-excludeList
   '("~$" "#$" ".git\/" ".gitignore$" "\/\.\/$" "\/\.\.\/$" ".DS_Store$"))
 
@@ -157,6 +130,8 @@
                                                    (fileTree-getName))))
     (define-key map "x" '(lambda () (interactive) (fileTree-remove-item
                                                    (fileTree-getName))))
+    (define-key map "S" 'fileTree-save-list)
+    (define-key map "D" 'fileTree-delete-list)
     (define-key map "-" 'fileTree-reduceListBy10)
     (define-key map "." 'fileTree-toggle-flat-vs-tree)
     (define-key map "i" 'fileTree-toggle-info-buffer)
@@ -171,9 +146,11 @@
 
 (defun fileTree-filter ()
   "Interactive function to filter 'fileTree-currentFileList'.
-Uses regular expression in 'fileTree-filterList' or by expression entered by user."
+Uses regular expression in 'fileTree-filetype-list' or by expression entered by user."
   (interactive)
-  (let ((myFileTree-mode-filterList fileTree-filterList)
+  (let ((myFileTree-mode-filterList (mapcar #'(lambda (x)
+                                                (subseq x 0 3))
+                                            fileTree-filetype-list))
 		(myFileTree-regex nil)
         (fileTree-elem nil)
         (fileTree-charInput (read-char)))
@@ -185,17 +162,16 @@ Uses regular expression in 'fileTree-filterList' or by expression entered by use
 	(if (not myFileTree-regex)
 		(setq myFileTree-regex (read-string "Type a string:")))
 	(setq fileTree-currentFileList (delete nil (mapcar #'(lambda (x)
-								    (if (string-match
-									 myFileTree-regex
-									 (file-name-nondirectory x))
-									x nil))
+								                           (if (string-match
+									                            myFileTree-regex
+									                            (file-name-nondirectory x))
+									                           x nil))
 								                       fileTree-currentFileList)))
 	(fileTree-updateBuffer)))
 
 (defun fileTree-remove-item (file_or_dir)
   "Remove the file or subdir ENTRY from the fileTree-currentFileList."
   (interactive)
-  (print file_or_dir)
   (setq fileTree-currentFileList (delete nil
                                          (if (string= "/"
                                                       (substring file_or_dir -1))
@@ -225,13 +201,15 @@ Uses regular expression in 'fileTree-filterList' or by expression entered by use
 (defun fileTree-expandDir (dir &optional filter)
   "Add files in DIR to 'fileTree-currentFileList'.
 If FILTER is not specified, will 'read-char' from user.  The corresponding
-regular expression in 'fileTree-filterList' will be used to filter which files
+regular expression in 'fileTree-filetype-list' will be used to filter which files
 are included.  If FILTER does not correspond to an entry in
-'fileTree-filterList' the user is prompted for a string/regular expression to
+'fileTree-filetype-list' the user is prompted for a string/regular expression to
 filter with."
   (interactive)
   (let ((fileTree-charInput (or filter (read-char)))
-        (myFileTree-mode-filterList fileTree-filterList)
+        (myFileTree-mode-filterList (mapcar #'(lambda (x)
+                                                (subseq x 0 3))
+                                            fileTree-filetype-list))
         (fileTree-newFiles nil)
 		(myFileTree-regex nil)
         (fileTree-elem nil))
@@ -270,13 +248,15 @@ filter with."
 (defun fileTree-expandDirRecursively (dir &optional filter)
   "Recursively add files in DIR to 'fileTree-currentFileList'.
 If FILTER is not specified, will 'read-char' from user.  The corresponding
-regular expression in 'fileTree-filterList' will be used to filter which files
+regular expression in 'fileTree-filetype-list' will be used to filter which files
 are included.  If FILTER does not correspond to an entry in
-'fileTree-filterList' the user is prompted for a string/regular expression to
+'fileTree-filetype-list' the user is prompted for a string/regular expression to
 filter with."
   (interactive)
   (let ((fileTree-charInput (or filter (read-char)))
-        (myFileTree-mode-filterList fileTree-filterList)
+        (myFileTree-mode-filterList (mapcar #'(lambda (x)
+                                                (subseq x 0 3))
+                                            fileTree-filetype-list))
 		(myFileTree-regex nil)
         (fileTree-elem nil)
         (fileTree-newFiles nil))
@@ -759,9 +739,10 @@ This is used when first starting an info note file."
 
 (defun fileTree-file-face (filename)
   "Return face to use for FILENAME.
-Info determined from 'fileTree-file-face-list' and 'fileTree-default-file-face'."
+Info determined from 'fileTree-filetype-list' and 'fileTree-default-file-face'."
   (let ((file-face fileTree-default-file-face)
-		(my-file-face-list fileTree-file-face-list)
+		(my-file-face-list (mapcar #'(lambda (x) (cdr (cdr x)))
+                                   fileTree-filetype-list))
         (elem nil)
         (fileTree-regex nil))
 	(while (/= (length my-file-face-list) 0)
@@ -803,6 +784,79 @@ Takes input from user for grep pattern."
                                        (list (helm-get-current-source)))))
   (fileTree-updateBuffer))
 
+(defun fileTree-select-file-list ()
+  "Select file list from saved file lists"
+  (interactive)
+  (let ((fileList (helm :sources (helm-build-sync-source "File Lists"
+                                   :candidates (mapcar #'(lambda (x)
+                                                           (car x))
+                                                       fileTree-saved-lists)
+                                   :action (lambda (candidate)
+                                             (let ((file-list
+                                                    (car (cdr (assoc candidate
+                                                                     fileTree-saved-lists)))))
+                                               (if (functionp file-list)
+                                                   (setq file-list (funcall file-list)))
+                                               file-list))
+                                                                   
+                                   :fuzzy-match t)
+                        :buffer "*fileTree-helm-buffer*")))
+    (if fileList
+        (setq fileTree-currentFileList fileList)
+      )
+    (fileTree-updateBuffer)))
+
+(defun fileTree-update-saved-lists-file ()
+  "Save current fileTree-saved-lists to file"
+  (save-current-buffer
+    (with-current-buffer (get-buffer-create "*fileTree-temp*")
+      (erase-buffer)
+      (insert "(setq fileTree-saved-lists '")
+      (insert (format "%S" fileTree-saved-lists))
+      (insert ")")
+      (write-file fileTree-saved-lists-file))))
+  
+(defun fileTree-save-list ()
+  "Save current file list"
+  (interactive)
+  (let ((list-name (helm :sources (helm-build-sync-source "File Lists"
+                                    :candidates (cons "*New Entry*"
+                                                      (mapcar #'(lambda (x)
+                                                                  (car x))
+                                                              fileTree-saved-lists))
+                                   :fuzzy-match t)
+                         :buffer "*fileTree-helm-buffer*")))
+    (if (string= list-name "*New Entry*")
+        (setq list-name (read-string "Enter new list name:")))
+    ;; first delete previous list-name entry (if any)
+    (setq fileTree-saved-lists (delete nil (mapcar #'(lambda (x)
+								                       (if (string-match
+									                        list-name
+									                        (car x))
+									                       nil x))
+                                                   fileTree-saved-lists)))
+    ;; add new entry
+    (setq fileTree-saved-lists (cons (cons list-name (list fileTree-currentFileList))
+                                     fileTree-saved-lists))
+    (fileTree-update-saved-lists-file)))
+      
+(defun fileTree-delete-list()
+  "Delete a file list from the fileTree-saved-list and save to file"
+  (interactive)
+  (let ((list-name (helm :sources (helm-build-sync-source "File Lists"
+                                    :candidates (mapcar #'(lambda (x)
+                                                            (car x))
+                                                        fileTree-saved-lists)
+                                   :fuzzy-match t)
+                         :buffer "*fileTree-helm-buffer*")))
+    (setq fileTree-saved-lists (delete nil (mapcar #'(lambda (x)
+								                       (if (string-match
+									                        list-name
+									                        (car x))
+									                       nil x))
+                                                   fileTree-saved-lists)))
+    (fileTree-update-saved-lists-file)))
+    
 (defun fileTree-showFiles (fileList)
   "Load FILELIST into current file list and show in tree mode."
   (setq fileTree-currentFileList fileList)
