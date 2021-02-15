@@ -130,6 +130,7 @@
                                                    (fileTree-getName))))
     (define-key map "x" '(lambda () (interactive) (fileTree-remove-item
                                                    (fileTree-getName))))
+    (define-key map "L" 'fileTree-select-file-list)
     (define-key map "S" 'fileTree-save-list)
     (define-key map "D" 'fileTree-delete-list)
     (define-key map "-" 'fileTree-reduceListBy10)
