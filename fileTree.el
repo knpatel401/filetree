@@ -27,7 +27,12 @@
 (require 'dash)
 (require 'xref)
 (require 'helm)
-(require 'cl-lib)
+;;(require 'cl-lib)
+
+;; External functions/variables
+(declare-function org-narrow-to-subtree "org" ())
+(defvar recentf-list)
+(defvar text-scale-mode-amount 0)
 
 (defgroup fileTree nil
   "Tree view of file list and file notes"
@@ -38,16 +43,60 @@
 
 (defconst fileTree-buffer-name "*FileTree*")
 
-(defvar fileTree-notes-file "~/.emacs.d/fileTree-notes.org")
+(defcustom fileTree-notes-file "~/.emacs.d/fileTree-notes.org"
+  "File used for file specific notes."
+  :type 'file)
+(defcustom fileTree-saved-lists-file "~/.emacs.d/fileTree-saved-lists.el"
+  "File used for saved file lists."
+  :type 'file)
+(defcustom fileTree-default-file-face 'default
+  "Default face to use for files.
+This is used if the file doesn't match any regex in `fileTree-filetype-list'."
+  :type 'face)
+(defcustom fileTree-use-all-the-icons nil
+  "Set to t to use file and directory icons.
+This can also be toggled using `fileTree-toggle-use-all-icons'."
+  :type 'boolean)
+(defcustom fileTree-info-window nil
+  "Set to t to show info in side window.
+This can also be toggled using `fileTree-toggle-info-buffer'."
+  :type 'boolean)
+(defcustom fileTree-excludeList
+  '("~$" "#$" ".git\/" ".gitignore$" "\/\.\/$" "\/\.\.\/$" ".DS_Store$")
+  "List of regex for files to exclude from file list."
+  :type '(repeat regexp))
+
+(defcustom fileTree-root-icon "\u25ba"
+  "Icon for end of mark indicating root dir."
+  :type 'character)
+(defcustom fileTree-box-icon "\u25a0"
+  "Box Icon used in mark for root dir."
+  :type 'character)
+(defcustom fileTree-vertical-pipe-icon "\u2502"
+  "Icon to indicate continuing branch."
+  :type 'character)
+(defcustom fileTree-horizontal-pipe-icon "\u2500"
+  "Icon for branch for node on current line."
+  :type 'character)
+(defcustom fileTree-left-elbow-icon "\u2514"
+  "Icon for last node on branch."
+  :type 'character)
+(defcustom fileTree-right-elbow-icon "\u2518"
+  "Icon for bottom right hand corner."
+  :type 'character)
+(defcustom fileTree-branch-and-cont-icon "\u251c"
+  "Icon indicating continuing branch which also includes node on current line."
+  :type 'character)
+(defcustom fileTree-file-node-icon "\u25cf"
+  "Icon for file node."
+  :type 'character)
 
 (defvar fileTree-info-buffer nil)
 (defvar fileTree-info-buffer-state nil)
-
-(defvar fileTree-saved-lists-file "~/.emacs.d/fileTree-saved-lists.el")
 (defvar fileTree-saved-lists '(("recentf" (lambda ()
                                             recentf-list))))
 (if (file-exists-p fileTree-saved-lists-file)
-    (with-temp-buffer 
+    (with-temp-buffer
       (insert-file-contents fileTree-saved-lists-file)
       (eval-buffer)))
   
@@ -59,9 +108,6 @@
 (defvar fileTree-fileListStack-save nil)
 (defvar fileTree-showFlatList nil)
 (defvar fileTree-combineDirNames t)
-(defvar fileTree-info-window nil)
-(defvar fileTree-default-file-face 'default)
-(defvar fileTree-use-all-the-icons nil)
 (defvar fileTree-helm-source
   '((name . "fileTree")
     (candidates . fileTree-currentFileList)
@@ -74,10 +120,9 @@
     (prompt . ("selection:"))))
   
 (defvar fileTree-filetype-list nil
-  "List of file types with filter shortcuts, regex for filetype, and face")
-    
-(defvar fileTree-excludeList
-  '("~$" "#$" ".git\/" ".gitignore$" "\/\.\/$" "\/\.\.\/$" ".DS_Store$"))
+  "List of file types with filter shortcuts, regex for filetype, and face.
+This is populated using `fileTree-add-filetype', for example see
+`fileTree-configure-default-filetypes'")
 
 (defvar fileTree-map
   (let ((map (make-sparse-keymap)))
@@ -133,7 +178,7 @@
   "Keymap for fileTree.")
 
 (defun fileTree-add-filetype (name shortcut regex face)
-  "Add a filetype to fileTree-filetype-list for special handling.
+  "Add a filetype to `fileTree-filetype-list' for special handling.
 - NAME is the name of the filetype (e.g., \"elisp\")
 - SHORTCUT is the shortcut char literal to use for this filetype when filtering
 - REGEX is the regular expression to use for detecting the filetype
@@ -142,6 +187,10 @@
   (push (list shortcut name regex face) fileTree-filetype-list))
 
 (defun fileTree-configure-default-filetypes ()
+  "Define default `fileTree-filetype-list'.
+This defines filetype faces, filetype regex, and filter shortcuts.
+This function is given as an example.  The user can generate their own
+custom function with calls to `fileTree-add-filetype'"
   (interactive)
   (setq fileTree-filetype-list nil)
   (fileTree-add-filetype "No Filter" 0   ""        ())
@@ -160,7 +209,7 @@
 Uses regular expression in 'fileTree-filetype-list' or by expression entered by user."
   (interactive)
   (let ((myFileTree-mode-filterList (mapcar #'(lambda (x)
-                                                (subseq x 0 3))
+                                                (seq-subseq x 0 3))
                                             fileTree-filetype-list))
         (myFileTree-regex nil)
         (fileTree-elem nil)
@@ -181,7 +230,7 @@ Uses regular expression in 'fileTree-filetype-list' or by expression entered by 
     (fileTree-updateBuffer)))
 
 (defun fileTree-remove-item (file_or_dir)
-  "Remove the file or subdir ENTRY from the fileTree-currentFileList."
+  "Remove the file or subdir FILE_OR_DIR from the `fileTree-currentFileList'."
   (interactive)
   (setq fileTree-currentFileList (delete nil
                                          (if (string= "/"
@@ -211,15 +260,15 @@ Uses regular expression in 'fileTree-filetype-list' or by expression entered by 
 
 (defun fileTree-expandDir (dir &optional filter)
   "Add files in DIR to 'fileTree-currentFileList'.
-If FILTER is not specified, will 'read-char' from user.  The corresponding
-regular expression in 'fileTree-filetype-list' will be used to filter which files
-are included.  If FILTER does not correspond to an entry in
-'fileTree-filetype-list' the user is prompted for a string/regular expression to
-filter with."
+If FILTER is not specified, will 'read-char' from user.
+The corresponding regular expression in 'fileTree-filetype-list' will
+be used to filter which files are included.  If FILTER does not
+correspond to an entry in 'fileTree-filetype-list' the user is
+prompted for a string/regular expression to filter with."
   (interactive)
   (let ((fileTree-charInput (or filter (read-char)))
         (myFileTree-mode-filterList (mapcar #'(lambda (x)
-                                                (subseq x 0 3))
+                                                (seq-subseq x 0 3))
                                             fileTree-filetype-list))
         (fileTree-newFiles nil)
         (myFileTree-regex nil)
@@ -259,14 +308,14 @@ filter with."
 (defun fileTree-expandDirRecursively (dir &optional filter)
   "Recursively add files in DIR to 'fileTree-currentFileList'.
 If FILTER is not specified, will 'read-char' from user.  The corresponding
-regular expression in 'fileTree-filetype-list' will be used to filter which files
-are included.  If FILTER does not correspond to an entry in
-'fileTree-filetype-list' the user is prompted for a string/regular expression to
-filter with."
+regular expression in 'fileTree-filetype-list' will be used to filter
+which files are included.  If FILTER does not correspond to an entry in
+'fileTree-filetype-list' the user is prompted for a string/regular
+expression to filter with."
   (interactive)
   (let ((fileTree-charInput (or filter (read-char)))
         (myFileTree-mode-filterList (mapcar #'(lambda (x)
-                                                (subseq x 0 3))
+                                                (seq-subseq x 0 3))
                                             fileTree-filetype-list))
         (myFileTree-regex nil)
         (fileTree-elem nil)
@@ -278,7 +327,6 @@ filter with."
       (setq myFileTree-mode-filterList (cdr myFileTree-mode-filterList)))
     (if (not myFileTree-regex)
         (setq myFileTree-regex (read-string "Type a string:")))
-
     (setq fileTree-newFiles (directory-files-recursively dir myFileTree-regex))
     (dolist (entry fileTree-excludeList)
       (setq fileTree-newFiles (delete nil (mapcar #'(lambda (x)
@@ -293,7 +341,7 @@ filter with."
 
 
 (defun fileTree-reduceListBy10 ()
-  "Drop last 10 entries in fileTree-currentFileList."
+  "Drop last 10 entries in `fileTree-currentFileList'."
   (interactive)
   (if (>= (length fileTree-currentFileList) 20)
       (setq fileTree-currentFileList (butlast fileTree-currentFileList 10))
@@ -331,14 +379,13 @@ filter with."
   (fileTree-goto-node))
 
 (defun fileTree-goto-node ()
-  "Helper function to move point to item on current line."
+  "Move point to item on current line."
   (interactive)
   (if (< (point) fileTree-startPosition)
       (goto-char fileTree-startPosition))
   (move-end-of-line 1)
   (re-search-backward " ")
   (forward-char)
-  ;; (if fileTree-info-buffer-state
   (if (and (buffer-live-p fileTree-info-buffer)
            (window-live-p fileTree-info-window))
     (fileTree-update-info-buffer (fileTree-getName))))
@@ -363,8 +410,7 @@ In other words go to next branch of tree."
               (forward-line (- fileTree-original-line
                                fileTree-current-line))
               (fileTree-goto-node))
-          (progn
-            (setq fileTree-current-line (line-number-at-pos))))))))
+          (setq fileTree-current-line (line-number-at-pos)))))))
 
 (defun fileTree-prev-branch ()
   "Go to previous item at the same or higher level in the tree.
@@ -386,8 +432,7 @@ In other wrods go to prev branch of tree."
               (forward-line (- fileTree-original-line
                                fileTree-current-line))
               (fileTree-goto-node))
-          (progn
-            (setq fileTree-current-line (line-number-at-pos))))))))
+          (setq fileTree-current-line (line-number-at-pos)))))))
 
 (defun fileTree-goto-name (name)
   "Helper function to go to item with name NAME."
@@ -442,7 +487,7 @@ In other wrods go to prev branch of tree."
                            'face (fileTree-file-face firstFile)
                            'action (lambda (x) (find-file (button-get x 'name)))
                            'name firstFile)
-      (insert (spaces-string (max 1 (- 30 (length filename)))))
+      (insert (make-string (max 1 (- 30 (length filename))) ?\s))
       (insert-text-button (concat directoryName "\n")
                           'face 'default
                           'action (lambda (x) (find-file (button-get x 'name)))
@@ -477,7 +522,8 @@ In other wrods go to prev branch of tree."
   
 (defun fileTree-print-tree (dirTree depthList)
   "Print directory tree.
-Print DIRTREE up to a depth of DEPTHLIST."
+Print DIRTREE up to a depth of DEPTHLIST.
+TODO: Break into smaller functions and clean-up."
   (interactive)
   (let ((myDepthList depthList)
         (myDirTree dirTree)
@@ -491,7 +537,6 @@ Print DIRTREE up to a depth of DEPTHLIST."
       (setcdr (last myDepthList)
               (list (- (length myDirTree) 1))))
     (setq curDepth (- (length myDepthList) 1))
-
     (if (or (= fileTree-maxDepth 0)
             (< curDepth fileTree-maxDepth))
         (while (/= (length myDirTree) 0)
@@ -499,24 +544,28 @@ Print DIRTREE up to a depth of DEPTHLIST."
           (setq thisType (car thisEntry))
           (setq thisName (nth 1 thisEntry))
           (if (equal thisType "dir")
-              (let ((myPrefix (string-join (mapcar #'(lambda (x) (if (> x 0)
-                                                                     ;; continue
-                                                                     " \u2502  "
-                                                                   "    "))
-                                                   (butlast myDepthList 1)) ""))
-
+              (let ((myPrefix (apply 'concat (mapcar #'(lambda (x) (if (> x 0)
+                                                                       ;; continue
+                                                                     (concat " " fileTree-vertical-pipe-icon "  ")
+                                                                     "    "))
+                                                     (butlast myDepthList 1))))
                     (dirContents (nth 2 thisEntry))
                     (fileTree-dirString nil))
-                    ;; (thisType (car (nth 2 thisEntry))))
                 (insert myPrefix)
                 (if (> (length myDepthList) 1)
                     (if (> (car (last myDepthList)) 0)
                         ;; branch and continue
-                        (insert " \u251c\u2500\u2500 ")
+                        (insert " " fileTree-branch-and-cont-icon
+                                fileTree-horizontal-pipe-icon
+                                fileTree-horizontal-pipe-icon " ")
                       ;; last branch
-                      (insert " \u2514\u2500\u2500 "))
+                      (insert " " fileTree-left-elbow-icon
+                              fileTree-horizontal-pipe-icon
+                              fileTree-horizontal-pipe-icon " "))
                   ;; Tree root
-                  (insert " \u25a0\u25a0\u25ba "))
+                  (insert " " fileTree-box-icon
+                          fileTree-box-icon
+                          fileTree-root-icon " "))
                 (setq fileTree-dirString thisName)
                 (if (= (length dirContents) 1)
                     (setq thisType (car (car dirContents))))
@@ -530,7 +579,6 @@ Print DIRTREE up to a depth of DEPTHLIST."
                       (setq thisName (nth 1 thisEntry))
                       (if (equal thisType "dir")
                           (progn
-                            ;; (insert (concat "/"  thisName))
                             (setq fileTree-dirString (concat fileTree-dirString
                                                              "/"  thisName))
                             (setq dirContents (nth 2 thisEntry))))))
@@ -540,28 +588,31 @@ Print DIRTREE up to a depth of DEPTHLIST."
                                     'face 'bold
                                     'action (lambda (x) (fileTree-narrow
                                                          (button-get x 'subtree)))
-                                    ;; 'name (nth 3 thisEntry)
                                     'name (concat (nth 3 thisEntry) "/")
                                     'subtree thisEntry)
                 (insert "/\n")
                 (setq myDepthListCopy (copy-tree myDepthList))
                 (if (> (length dirContents) 0)
                     (fileTree-print-tree dirContents myDepthListCopy)))
-
             ;; file
             (let ((myLink (nth 2 thisEntry))
                   (fileText (concat thisName))
-                  (myPrefix (string-join (mapcar #'(lambda (x) (if (= x 0)
-                                                                   "    "
-                                                                 ;; continue
-                                                                 " \u2502  "))
-                                                 (butlast myDepthList 1)) "")))
+                  (myPrefix (apply 'concat (mapcar #'(lambda (x) (if (= x 0)
+                                                                     "    "
+                                                                   ;; continue
+                                                                   (concat " " fileTree-vertical-pipe-icon "  ")))
+                                                   (butlast myDepthList 1)))))
               (if (> (car (last myDepthList)) 0)
                   ;; file and continue
-                  (setq myPrefix (concat myPrefix " \u251c" "\u2500\u25cf "))
+                  (setq myPrefix (concat myPrefix " "
+                                         fileTree-branch-and-cont-icon
+                                         fileTree-horizontal-pipe-icon
+                                         fileTree-file-node-icon " "))
                 ;; last file
-                (setq myPrefix (concat myPrefix " \u2514" "\u2500\u25cf ")))
-
+                (setq myPrefix (concat myPrefix " "
+                                       fileTree-left-elbow-icon
+                                       fileTree-horizontal-pipe-icon
+                                       fileTree-file-node-icon " ")))
               (insert myPrefix)
               (let ((button-face (fileTree-file-face fileText)))
                 (if fileTree-use-all-the-icons
@@ -578,7 +629,7 @@ Print DIRTREE up to a depth of DEPTHLIST."
 
 (defun fileTree-printHeader ()
   "Print header at top of window."
-  (insert (concat "\u2502 "
+  (insert (concat fileTree-vertical-pipe-icon " "
                   (propertize "# files: " 'font-lock-face 'bold)
                   (number-to-string (length fileTree-currentFileList))
                   (propertize "\tMax depth: " 'font-lock-face 'bold)
@@ -589,9 +640,9 @@ Print DIRTREE up to a depth of DEPTHLIST."
                   (if fileTree-showFlatList
                       (propertize "Flat view" 'font-lock-face '(:foreground "blue"))
                     (propertize "Tree view" 'font-lock-face '(:foreground "DarkOliveGreen4")))
-                  " \n\u2514"))
+                  " \n" fileTree-left-elbow-icon))
   (insert (make-string (+ (point) 1) ?\u2500))
-  (insert "\u2518\n")
+  (insert fileTree-right-elbow-icon "\n")
   (setq fileTree-startPosition (point)))
 
 (defun fileTree-createSingleNodeTree (filename)
@@ -609,7 +660,7 @@ Print DIRTREE up to a depth of DEPTHLIST."
                                  (if (not singleNodeTree)
                                      nil
                                    (list singleNodeTree))
-                                 (concat "/" (string-join (reverse filenameList) "/"))))
+                                 (concat "/" (mapconcat 'identity (reverse filenameList) "/"))))
       (setq filenameList (cdr filenameList)))
     singleNodeTree))
   
@@ -632,7 +683,7 @@ Print DIRTREE up to a depth of DEPTHLIST."
                                             (nth 2 x)
                                           (fileTree-createFileList (nth 2 x))))
                           fileTree)))
-    fileTree ))
+    fileTree))
 
 (defun fileTree-update-or-open-info-buffer()
   "Update info buffer based on current buffer.
@@ -712,7 +763,8 @@ This is used when first starting an info note file."
                               'font-lock-face '(:foreground "red")))))
 
 (defun fileTree-updateBuffer ()
-  "Update the display buffer (following some change)."
+  "Update the display buffer (following some change).
+This function should be called after any change to 'fileTree-currentFileList'."
   (interactive)
   (let ((text-scale-previous (buffer-local-value 'text-scale-mode-amount
                                                  (current-buffer))))
@@ -779,16 +831,18 @@ Info determined from 'fileTree-filetype-list' and 'fileTree-default-file-face'."
   "Run grep on files in 'currentFileList'.
 Takes input from user for grep pattern."
   (interactive)
-  (let* ((myFileTree-regex (read-string "Type search string:"))
-         (xrefs nil)
-         (fetcher
-          (lambda ()
-            (setq xrefs (xref-matches-in-files myFileTree-regex
-                                               (-filter 'file-exists-p fileTree-currentFileList)))
-            (unless xrefs
-              (user-error "No matches for: %s" myFileTree-regex))
-            xrefs)))
-    (xref--show-xrefs fetcher nil)))
+  (if (version< emacs-version "27")
+      (message "fileTree-grep not supported for emacs versions before 27")
+    (let* ((myFileTree-regex (read-string "Type search string:"))
+           (xrefs nil)
+           (fetcher
+            (lambda ()
+              (setq xrefs (xref-matches-in-files myFileTree-regex
+                                                 (-filter 'file-exists-p fileTree-currentFileList)))
+              (unless xrefs
+                (user-error "No matches for: %s" myFileTree-regex))
+              xrefs)))
+      (xref--show-xrefs fetcher nil))))
 
 (defun fileTree-helm-filter ()
   "Use helm-based filtering on fileTree."
@@ -808,7 +862,7 @@ Takes input from user for grep pattern."
   (fileTree-updateBuffer))
 
 (defun fileTree-select-file-list ()
-  "Select file list from saved file lists"
+  "Select file list from saved file lists."
   (interactive)
   (let ((fileList (helm :sources (helm-build-sync-source "File Lists"
                                    :candidates (mapcar #'(lambda (x)
@@ -825,12 +879,11 @@ Takes input from user for grep pattern."
                                    :fuzzy-match t)
                         :buffer "*fileTree-helm-buffer*")))
     (if fileList
-        (setq fileTree-currentFileList fileList)
-      )
+        (setq fileTree-currentFileList fileList))
     (fileTree-updateBuffer)))
 
 (defun fileTree-update-saved-lists-file ()
-  "Save current fileTree-saved-lists to file"
+  "Save current `fileTree-saved-lists' to file."
   (save-current-buffer
     (with-current-buffer (get-buffer-create "*fileTree-temp*")
       (erase-buffer)
@@ -840,7 +893,7 @@ Takes input from user for grep pattern."
       (write-file fileTree-saved-lists-file))))
   
 (defun fileTree-save-list ()
-  "Save current file list"
+  "Save current file list."
   (interactive)
   (let ((list-name (helm :sources (helm-build-sync-source "File Lists"
                                     :candidates (cons "*New Entry*"
@@ -864,7 +917,7 @@ Takes input from user for grep pattern."
     (fileTree-update-saved-lists-file)))
       
 (defun fileTree-delete-list()
-  "Delete a file list from the fileTree-saved-list and save to file"
+  "Delete a file list from the `fileTree-saved-list' and save to file."
   (interactive)
   (let ((list-name (helm :sources (helm-build-sync-source "File Lists"
                                     :candidates (mapcar #'(lambda (x)
@@ -884,12 +937,13 @@ Takes input from user for grep pattern."
   "Load FILELIST into current file list and show in tree mode."
   (setq fileTree-currentFileList fileList)
   (setq fileTree-fileListStack (list fileTree-currentFileList))
-  (fileTree-updateBuffer)
-  )
+  (fileTree-updateBuffer))
 
 (defun fileTree-showRecentfFiles ()
   "Load recentf list into current file list and show in tree mode."
   (interactive)
+  (if (not recentf-mode)
+      (recentf-mode))
   (fileTree-showFiles recentf-list))
 
 (defun fileTree-showCurDir ()
@@ -897,16 +951,14 @@ Takes input from user for grep pattern."
   (interactive)
   (setq fileTree-currentFileList nil)
   (setq fileTree-fileListStack (list fileTree-currentFileList))
-  (fileTree-expandDir (file-name-directory (buffer-file-name)) 0)
-  )
+  (fileTree-expandDir (file-name-directory (buffer-file-name)) 0))
 
 (defun fileTree-showCurDirRecursively ()
   "Load files in current directory (recursively) into current file list and show in tree mode."
   (interactive)
   (setq fileTree-currentFileList nil)
   (setq fileTree-fileListStack (list fileTree-currentFileList))
-  (fileTree-expandDirRecursively (file-name-directory (buffer-file-name)) 0)
-  )
+  (fileTree-expandDirRecursively (file-name-directory (buffer-file-name)) 0))
 
 (defun fileTree-showCurBuffers ()
   "Load file buffers in buffer list into current file list and show in tree mode."
@@ -919,11 +971,9 @@ Takes input from user for grep pattern."
       (setq myBufferList (cdr myBufferList))
       (if (buffer-file-name myBuffer)
           (setq myFileList (cons (buffer-file-name myBuffer)
-                                 myFileList)))
-      )
+                                 myFileList))))
     (setq fileTree-currentFileList myFileList)
-    (fileTree-updateBuffer)
-    ))
+    (fileTree-updateBuffer)))
 
 (defun fileTree-findFilesWithNotes ()
   "Return list of files with notes."
