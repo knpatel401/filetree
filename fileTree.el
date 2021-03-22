@@ -35,7 +35,7 @@
 (defvar text-scale-mode-amount 0)
 
 (defgroup fileTree nil
-  "Tree view of file list and file notes"
+  "Tree view of file list and file notes."
   :group 'matching
   :prefix "fileTree-")
 
@@ -66,29 +66,34 @@ This can also be toggled using `fileTree-toggle-info-buffer'."
   "List of regex for files to exclude from file list."
   :type '(repeat regexp))
 
-(defcustom fileTree-root-icon "\u25ba"
-  "Icon for end of mark indicating root dir."
+(defgroup fileTree-symb-for nil
+  "Symbols used for drawing tree in fileTree package."
+  :group 'fileTree
+  :prefix "fileTree-symb-for-")
+
+(defcustom fileTree-symb-for-root "\u25ba"
+  "Symbol for end of mark indicating root dir."
   :type 'character)
-(defcustom fileTree-box-icon "\u25a0"
-  "Box Icon used in mark for root dir."
+(defcustom fileTree-symb-for-box "\u25a0"
+  "Box symbol used in mark for root dir."
   :type 'character)
-(defcustom fileTree-vertical-pipe-icon "\u2502"
-  "Icon to indicate continuing branch."
+(defcustom fileTree-symb-for-vertical-pipe "\u2502"
+  "Symbol to indicate continuing branch."
   :type 'character)
-(defcustom fileTree-horizontal-pipe-icon "\u2500"
-  "Icon for branch for node on current line."
+(defcustom fileTree-symb-for-horizontal-pipe "\u2500"
+  "Symbol for branch for node on current line."
   :type 'character)
-(defcustom fileTree-left-elbow-icon "\u2514"
-  "Icon for last node on branch."
+(defcustom fileTree-symb-for-left-elbow "\u2514"
+  "Symbol for last node on branch."
   :type 'character)
-(defcustom fileTree-right-elbow-icon "\u2518"
-  "Icon for bottom right hand corner."
+(defcustom fileTree-symb-for-right-elbow "\u2518"
+  "Symbol for bottom right hand corner."
   :type 'character)
-(defcustom fileTree-branch-and-cont-icon "\u251c"
-  "Icon indicating continuing branch which also includes node on current line."
+(defcustom fileTree-symb-for-branch-and-cont "\u251c"
+  "Symbol indicating continuing branch which also includes node on current line."
   :type 'character)
-(defcustom fileTree-file-node-icon "\u25cf"
-  "Icon for file node."
+(defcustom fileTree-symb-for-file-node "\u25cf"
+  "Symbol for file node."
   :type 'character)
 
 (defvar fileTree-info-buffer nil)
@@ -126,10 +131,10 @@ This is populated using `fileTree-add-filetype', for example see
 
 (defvar fileTree-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "?" '(lambda () (interactive) (message "%s %s" (fileTree-getName)
-                                                             (if (button-at (point))
-                                                                 (button-get (button-at (point)) 'subtree)
-                                                               nil))))
+    ;; (define-key map "?" '(lambda () (interactive) (message "%s %s" (fileTree-getName)
+    ;;                                                          (if (button-at (point))
+    ;;                                                              (button-get (button-at (point)) 'subtree)
+    ;;                                                            nil))))
     (define-key map "j" 'fileTree-next-line)
     (define-key map "k" 'fileTree-prev-line)
     (define-key map (kbd "<down>") 'fileTree-next-line)
@@ -139,28 +144,25 @@ This is populated using `fileTree-add-filetype', for example see
     (define-key map (kbd "SPC") 'fileTree-next-branch)
     (define-key map (kbd "TAB") 'fileTree-prev-branch)
     (define-key map "q" 'recentf-cancel-dialog)
-    (define-key map "0" '(lambda () (interactive) (fileTree-set-maxDepth 0)))
-    (define-key map "1" '(lambda () (interactive) (fileTree-set-maxDepth 1)))
-    (define-key map "2" '(lambda () (interactive) (fileTree-set-maxDepth 2)))
-    (define-key map "3" '(lambda () (interactive) (fileTree-set-maxDepth 3)))
-    (define-key map "4" '(lambda () (interactive) (fileTree-set-maxDepth 4)))
-    (define-key map "5" '(lambda () (interactive) (fileTree-set-maxDepth 5)))
-    (define-key map "6" '(lambda () (interactive) (fileTree-set-maxDepth 6)))
-    (define-key map "7" '(lambda () (interactive) (fileTree-set-maxDepth 7)))
-    (define-key map "8" '(lambda () (interactive) (fileTree-set-maxDepth 8)))
-    (define-key map "9" '(lambda () (interactive) (fileTree-set-maxDepth 9)))
+    (define-key map "0" 'fileTree-set-maxDepth)
+    (define-key map "1" 'fileTree-set-maxDepth1)
+    (define-key map "2" 'fileTree-set-maxDepth2)
+    (define-key map "3" 'fileTree-set-maxDepth3)
+    (define-key map "4" 'fileTree-set-maxDepth4)
+    (define-key map "5" 'fileTree-set-maxDepth5)
+    (define-key map "6" 'fileTree-set-maxDepth6)
+    (define-key map "7" 'fileTree-set-maxDepth7)
+    (define-key map "8" 'fileTree-set-maxDepth8)
+    (define-key map "9" 'fileTree-set-maxDepth9)
     (define-key map "r" 'fileTree-showRecentfFiles)
     (define-key map "f" 'fileTree-filter)
     (define-key map "/" 'fileTree-toggle-combineDirNames)
     (define-key map "b" 'fileTree-pop-fileListStack)
     (define-key map "g" 'fileTree-grep)
-    (define-key map "d" '(lambda () (interactive) (dired (fileTree-getName))))
-    (define-key map "e" '(lambda () (interactive) (fileTree-expandDir
-                                                   (fileTree-getName))))
-    (define-key map "E" '(lambda () (interactive) (fileTree-expandDirRecursively
-                                                   (fileTree-getName))))
-    (define-key map "x" '(lambda () (interactive) (fileTree-remove-item
-                                                   (fileTree-getName))))
+    (define-key map "d" 'fileTree-run-dired)
+    (define-key map "e" 'fileTree-expandDir)
+    (define-key map "E" 'fileTree-expandDirRecursively)
+    (define-key map "x" 'fileTree-remove-item)
     (define-key map "L" 'fileTree-select-file-list)
     (define-key map "S" 'fileTree-save-list)
     (define-key map "D" 'fileTree-delete-list)
@@ -171,7 +173,6 @@ This is populated using `fileTree-add-filetype', for example see
                           "Toggle fileTree-info-buffer and switch to it if active"
                           (interactive)
                           (fileTree-toggle-info-buffer t)))
-    (define-key map (kbd "C-.") 'fileTree-toggle-flat-vs-tree)
     (define-key map "s" 'fileTree-helm-filter)
     (define-key map ";" 'fileTree-toggle-use-all-icons)
     map)
@@ -229,26 +230,29 @@ Uses regular expression in 'fileTree-filetype-list' or by expression entered by 
                                                        fileTree-currentFileList)))
     (fileTree-updateBuffer)))
 
-(defun fileTree-remove-item (file_or_dir)
-  "Remove the file or subdir FILE_OR_DIR from the `fileTree-currentFileList'."
+(defun fileTree-remove-item (&optional file_or_dir)
+  "Remove the file or subdir FILE_OR_DIR from the `fileTree-currentFileList'.
+If file_or_dir not specified, use file or dir at point."
   (interactive)
-  (setq fileTree-currentFileList (delete nil
-                                         (if (string= "/"
-                                                      (substring file_or_dir -1))
-                                             ;; removing subdirectory
-                                             (mapcar #'(lambda (x)
-                                                         (if (string-match
-                                                              file_or_dir
-                                                              x)
-                                                             nil x))
-                                                     fileTree-currentFileList)
-                                           ;; removing file
-                                           (mapcar #'(lambda (x)
-                                                       (if (string=
-                                                            file_or_dir
-                                                            x)
-                                                           nil x))
-                                                   fileTree-currentFileList))))
+  (let ((file_or_dir (or file_or_dir (fileTree-getName))))
+    (setq fileTree-currentFileList (delete
+                                    nil
+                                    (if (string= "/"
+                                                 (substring file_or_dir -1))
+                                        ;; removing subdirectory
+                                        (mapcar #'(lambda (x)
+                                                    (if (string-match
+                                                         file_or_dir
+                                                         x)
+                                                        nil x))
+                                                fileTree-currentFileList)
+                                      ;; removing file
+                                      (mapcar #'(lambda (x)
+                                                  (if (string=
+                                                       file_or_dir
+                                                       x)
+                                                      nil x))
+                                              fileTree-currentFileList)))))
   (fileTree-updateBuffer))
 
 (defun fileTree-getName ()
@@ -258,15 +262,17 @@ Uses regular expression in 'fileTree-filetype-list' or by expression entered by 
       (button-get (button-at (point)) 'name)
     nil))
 
-(defun fileTree-expandDir (dir &optional filter)
+(defun fileTree-expandDir (&optional dir filter)
   "Add files in DIR to 'fileTree-currentFileList'.
+If DIR is not specified, use dir at point.
 If FILTER is not specified, will 'read-char' from user.
 The corresponding regular expression in 'fileTree-filetype-list' will
 be used to filter which files are included.  If FILTER does not
 correspond to an entry in 'fileTree-filetype-list' the user is
 prompted for a string/regular expression to filter with."
   (interactive)
-  (let ((fileTree-charInput (or filter (read-char)))
+  (let ((dir (or dir (fileTree-getName)))
+        (fileTree-charInput (or filter (read-char)))
         (myFileTree-mode-filterList (mapcar #'(lambda (x)
                                                 (seq-subseq x 0 3))
                                             fileTree-filetype-list))
@@ -305,15 +311,17 @@ prompted for a string/regular expression to filter with."
                              fileTree-newFiles)))))
   (fileTree-updateBuffer))
 
-(defun fileTree-expandDirRecursively (dir &optional filter)
+(defun fileTree-expandDirRecursively (&optional dir filter)
   "Recursively add files in DIR to 'fileTree-currentFileList'.
+If DIR is not specified, use dir at point.
 If FILTER is not specified, will 'read-char' from user.  The corresponding
 regular expression in 'fileTree-filetype-list' will be used to filter
 which files are included.  If FILTER does not correspond to an entry in
 'fileTree-filetype-list' the user is prompted for a string/regular
 expression to filter with."
   (interactive)
-  (let ((fileTree-charInput (or filter (read-char)))
+  (let ((dir (or dir (fileTree-getName)))
+        (fileTree-charInput (or filter (read-char)))
         (myFileTree-mode-filterList (mapcar #'(lambda (x)
                                                 (seq-subseq x 0 3))
                                             fileTree-filetype-list))
@@ -339,6 +347,9 @@ expression to filter with."
                                                       fileTree-newFiles)))))
   (fileTree-updateBuffer))
 
+(defun fileTree-run-dired ()
+  "Run dired on directory at point."
+  (dired (fileTree-getName)))
 
 (defun fileTree-reduceListBy10 ()
   "Drop last 10 entries in `fileTree-currentFileList'."
@@ -359,11 +370,57 @@ expression to filter with."
                              fileTree-overallDepth))
   (fileTree-updateBuffer))
   
-(defun fileTree-set-maxDepth (maxDepth)
-  "Set depth of displayed file tree to MAXDEPTH."
+(defun fileTree-set-maxDepth (&optional maxDepth)
+  "Set depth of displayed file tree to MAXDEPTH.
+If maxdepth not specified, show full tree."
   (interactive)
-  (setq fileTree-maxDepth maxDepth)
+  (setq fileTree-maxDepth (or maxDepth 0))
   (fileTree-updateBuffer))
+
+(defun fileTree-set-maxDepth1 ()
+  "Set depth of displayed file to 1."
+  (interactive)
+  (fileTree-set-maxDepth 1))
+
+(defun fileTree-set-maxDepth2 ()
+  "Set depth of displayed file to 2."
+  (interactive)
+  (fileTree-set-maxDepth 2))
+
+(defun fileTree-set-maxDepth3 ()
+  "Set depth of displayed file to 3."
+  (interactive)
+  (fileTree-set-maxDepth 3))
+
+(defun fileTree-set-maxDepth4 ()
+  "Set depth of displayed file to 4."
+  (interactive)
+  (fileTree-set-maxDepth 4))
+
+(defun fileTree-set-maxDepth5 ()
+  "Set depth of displayed file to 5."
+  (interactive)
+  (fileTree-set-maxDepth 5))
+
+(defun fileTree-set-maxDepth6 ()
+  "Set depth of displayed file to 6."
+  (interactive)
+  (fileTree-set-maxDepth 6))
+
+(defun fileTree-set-maxDepth7 ()
+  "Set depth of displayed file to 7."
+  (interactive)
+  (fileTree-set-maxDepth 7))
+
+(defun fileTree-set-maxDepth8 ()
+  "Set depth of displayed file to 8."
+  (interactive)
+  (fileTree-set-maxDepth 8))
+
+(defun fileTree-set-maxDepth9 ()
+  "Set depth of displayed file to 9."
+  (interactive)
+  (fileTree-set-maxDepth 9))
 
 (defun fileTree-next-line ()
   "Go to file/dir on next line."
@@ -382,7 +439,10 @@ expression to filter with."
   "Move point to item on current line."
   (interactive)
   (if (< (point) fileTree-startPosition)
-      (goto-char fileTree-startPosition))
+      (progn
+        (goto-char (point-min))
+        (recenter-top-bottom "Top")
+        (goto-char fileTree-startPosition)))
   (move-end-of-line 1)
   (re-search-backward " ")
   (forward-char)
@@ -546,7 +606,7 @@ TODO: Break into smaller functions and clean-up."
           (if (equal thisType "dir")
               (let ((myPrefix (apply 'concat (mapcar #'(lambda (x) (if (> x 0)
                                                                        ;; continue
-                                                                     (concat " " fileTree-vertical-pipe-icon "  ")
+                                                                     (concat " " fileTree-symb-for-vertical-pipe "  ")
                                                                      "    "))
                                                      (butlast myDepthList 1))))
                     (dirContents (nth 2 thisEntry))
@@ -555,17 +615,17 @@ TODO: Break into smaller functions and clean-up."
                 (if (> (length myDepthList) 1)
                     (if (> (car (last myDepthList)) 0)
                         ;; branch and continue
-                        (insert " " fileTree-branch-and-cont-icon
-                                fileTree-horizontal-pipe-icon
-                                fileTree-horizontal-pipe-icon " ")
+                        (insert " " fileTree-symb-for-branch-and-cont
+                                fileTree-symb-for-horizontal-pipe
+                                fileTree-symb-for-horizontal-pipe " ")
                       ;; last branch
-                      (insert " " fileTree-left-elbow-icon
-                              fileTree-horizontal-pipe-icon
-                              fileTree-horizontal-pipe-icon " "))
+                      (insert " " fileTree-symb-for-left-elbow
+                              fileTree-symb-for-horizontal-pipe
+                              fileTree-symb-for-horizontal-pipe " "))
                   ;; Tree root
-                  (insert " " fileTree-box-icon
-                          fileTree-box-icon
-                          fileTree-root-icon " "))
+                  (insert " " fileTree-symb-for-box
+                          fileTree-symb-for-box
+                          fileTree-symb-for-root " "))
                 (setq fileTree-dirString thisName)
                 (if (= (length dirContents) 1)
                     (setq thisType (car (car dirContents))))
@@ -600,19 +660,19 @@ TODO: Break into smaller functions and clean-up."
                   (myPrefix (apply 'concat (mapcar #'(lambda (x) (if (= x 0)
                                                                      "    "
                                                                    ;; continue
-                                                                   (concat " " fileTree-vertical-pipe-icon "  ")))
+                                                                   (concat " " fileTree-symb-for-vertical-pipe "  ")))
                                                    (butlast myDepthList 1)))))
               (if (> (car (last myDepthList)) 0)
                   ;; file and continue
                   (setq myPrefix (concat myPrefix " "
-                                         fileTree-branch-and-cont-icon
-                                         fileTree-horizontal-pipe-icon
-                                         fileTree-file-node-icon " "))
+                                         fileTree-symb-for-branch-and-cont
+                                         fileTree-symb-for-horizontal-pipe
+                                         fileTree-symb-for-file-node " "))
                 ;; last file
                 (setq myPrefix (concat myPrefix " "
-                                       fileTree-left-elbow-icon
-                                       fileTree-horizontal-pipe-icon
-                                       fileTree-file-node-icon " ")))
+                                       fileTree-symb-for-left-elbow
+                                       fileTree-symb-for-horizontal-pipe
+                                       fileTree-symb-for-file-node " ")))
               (insert myPrefix)
               (let ((button-face (fileTree-file-face fileText)))
                 (if fileTree-use-all-the-icons
@@ -629,7 +689,7 @@ TODO: Break into smaller functions and clean-up."
 
 (defun fileTree-printHeader ()
   "Print header at top of window."
-  (insert (concat fileTree-vertical-pipe-icon " "
+  (insert (concat fileTree-symb-for-vertical-pipe " "
                   (propertize "# files: " 'font-lock-face 'bold)
                   (number-to-string (length fileTree-currentFileList))
                   (propertize "\tMax depth: " 'font-lock-face 'bold)
@@ -640,9 +700,9 @@ TODO: Break into smaller functions and clean-up."
                   (if fileTree-showFlatList
                       (propertize "Flat view" 'font-lock-face '(:foreground "blue"))
                     (propertize "Tree view" 'font-lock-face '(:foreground "DarkOliveGreen4")))
-                  " \n" fileTree-left-elbow-icon))
+                  " \n" fileTree-symb-for-left-elbow))
   (insert (make-string (+ (point) 1) ?\u2500))
-  (insert fileTree-right-elbow-icon "\n")
+  (insert fileTree-symb-for-right-elbow "\n")
   (setq fileTree-startPosition (point)))
 
 (defun fileTree-createSingleNodeTree (filename)
