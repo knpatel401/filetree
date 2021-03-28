@@ -4,9 +4,8 @@
 ;;
 ;; Author: Ketan Patel <knpatel401@gmail.com>
 ;; URL: https://github.com/knpatel401/filetree
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "27.1") (dash "2.12.0") (helm "3.7.0"))
 ;; Version: 1.0.0
-;; Package-Requires: ((dash "2.12.0"))
 ;;; Commentary:
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -29,6 +28,7 @@
 (require 'dash)
 (require 'xref)
 (require 'helm)
+(require 'seq)
 ;;(require 'cl-lib)
 
 ;; External functions/variables
