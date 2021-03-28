@@ -41,7 +41,7 @@
 
 (defvar filetree-version "1.0")
 
-(defconst filetree-buffer-name "*FileTree*")
+(defconst filetree-buffer-name "*filetree*")
 
 (defcustom filetree-notes-file "~/.emacs.d/filetree-notes.org"
   "File used for file specific notes."
@@ -143,7 +143,7 @@ This is populated using `filetree-add-filetype', for example see
     (define-key map (kbd "C-k") 'filetree-prev-line)
     (define-key map (kbd "SPC") 'filetree-next-branch)
     (define-key map (kbd "TAB") 'filetree-prev-branch)
-    (define-key map "q" 'recentf-cancel-dialog)
+    (define-key map "q" 'filetree-close-session)
     (define-key map "0" 'filetree-set-maxDepth)
     (define-key map "1" 'filetree-set-maxDepth1)
     (define-key map "2" 'filetree-set-maxDepth2)
@@ -177,6 +177,11 @@ This is populated using `filetree-add-filetype', for example see
     (define-key map ";" 'filetree-toggle-use-all-icons)
     map)
   "Keymap for filetree.")
+
+(defun filetree-close-session ()
+  "Close filetree session."
+  (interactive)
+  (kill-buffer (current-buffer)))
 
 (defun filetree-add-filetype (name shortcut regex face)
   "Add a filetype to `filetree-filetype-list' for special handling.

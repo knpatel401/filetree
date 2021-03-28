@@ -2,10 +2,12 @@
 Filetree is a package that provides two basic functions:
 
 * **File tree viewer**
-The viewer displays a file list as a directory tree in a special buffer.  The file list can be populated from any list of files.  There are functions to populate from a number of common sources: recentf, files in buffer-list, files in the current directory, files found recursively in the current directory.  Within the viewer, the file list can be filtered and expanded in various ways and operations can be performed on the filtered file list (e.g., grep over files in list).  Multiple file lists can be saved and retrieved between sessions.
+The viewer displays a file list as a directory tree in a special buffer.  The file list can be populated from any list of files.  There are functions to populate from a number of common sources: recentf, files in buffer-list, files in the current directory, and files found recursively in the current directory.  Within the viewer, the file list can be filtered and expanded in various ways and operations can be performed on the filtered file list (e.g., grep over files in list).  Multiple file lists can be saved and retrieved between sessions.
 
 * **File notes**
 The file notes enables the user to write and display (org-mode) notes associated with individual files and directories.  The note can be displayed in a side buffer either when cycling through files in the file tree viewer or when the file is open in a buffer.  The notes are kept in a single org-mode file with a heading for each file/directory.
+
+![filetree demo](filetree_demo.gif)
 
 ## File tree Viewer
 
@@ -20,7 +22,7 @@ The following commands start the viewer with the corresponding file list
 | filetree-showCurBuffers        | populate files from buffer-list               |
 | filetree-showFilesWithNotes    | populate file list with files with "notes"    |
 | filetree-showFiles             | populate files from file list in argument     |
-| filetree-recentf-cancel-dialog | exit viewer (tied to q in keymap              |
+| filetree-close-session         | exit viewer (tied to q in keymap)             |
 
 
 ### Navigation
@@ -74,12 +76,12 @@ File lists can be saved/retrieved from the file specified by filetree-saved-list
 ## File Notes
 This package maintains a notes file in the file specified by filetree-notes-file (default: ~/.emacs.d/filetree-notes.org).  This is an org-mode file that can hold notes associated with any file, and those notes can be seen in a side window as the user navigates through the file tree.
 
-In order to go to the entry for a file (and create an entry if it doesn't exist), use the filetree-toggle-info-buffer command.  For example,  I use the following key binding in my .emacs to run the command:
+In order to go to the entry for a file (and create an entry if it doesn't exist), use the filetree-toggle-info-buffer command.  For example, you can use the following key binding in your .emacs to run the command:
 ```
-(global-set-key (kbd "M-<return>") (lambda ()
-                                     "Toggle filetree-info-buffer and switch to it if active"
-                                     (interactive)
-                                     (filetree-toggle-info-buffer t)))
+(global-set-key (kbd "C-c <return>") (lambda ()
+                                       "Toggle filetree-info-buffer and switch to it if active"
+                                       (interactive)
+                                       (filetree-toggle-info-buffer t)))
 ```
 The same command will open and close (after saving) the notes buffer in the side window.
 
@@ -91,7 +93,39 @@ Within the filetree buffer, the "i" key will toggle the side window with the not
 
 ## Customizations
 
+### Files used by filetree
+| Parameter                 | default                            | Comment                        |
+|---------------------------|------------------------------------|--------------------------------|
+| filetree-notes-file       | ~/.emacs.d/filetree-notes.org      | File used for file notes       |
+| filetree-saved-lists-file | ~/.emacs.d/filetree-saved-lists.el | File used for saved file lists |
 
+### Settings related to startup state
+| filetree-info-window       | nil  | Set to t to show notes/info side window at start |
+| filetree-use-all-the-icons | nil  | Set to t to show icons for files/dirs            |
+Note enabling use-all-the-icons can make some of the operations sluggish if the file list is large.
 
+### Faces, marks, and misc
+The variable filetree-excludeList is a list of regex for files to ignore.
 
+The marks used to draw the file trees can be customized.  Here is the list of symbols that are used:
+filetree-symb-for-root filetree-symb-for-box, filetree-symb-for-vertical-pipe, filetree-symb-for-horizontal-pipe, filetree-symb-for-left-elbow, filetree-symb-for-right-elbow, filetree-symb-for-branch-and-cont, filetree-symb-for-file-node)
 
+The faces used for different file types as well as the shortcuts used to filter those file types are specified using 'filetree-add-filetype.  The function that sets the default settings can be used as an example (see below).  The calls to filetree-add-filetype has the following arguments: file type name, shortcut, regex, face.  Note (setq filetree-filetype-list nil) clears any previous filetype entries in filetree-filetype-list.
+```
+(defun filetree-configure-default-filetypes ()
+  "Define default `filetree-filetype-list'.
+This defines filetype faces, filetype regex, and filter shortcuts.
+This function is given as an example.  The user can generate their own
+custom function with calls to `filetree-add-filetype'"
+  (interactive)
+  (setq filetree-filetype-list nil)
+  (filetree-add-filetype "No Filter" 0   ""        ())
+  (filetree-add-filetype "Python"    ?p  "\.py$"   '(:foreground "steel blue"))
+  (filetree-add-filetype "Org-mode"  ?o  "\.org$"  '(:foreground "DarkOliveGreen4"))
+  (filetree-add-filetype "elisp"     ?e  "\\(?:\\.e\\(?:l\\|macs\\)\\)"  '(:foreground "purple"))
+  (filetree-add-filetype "C"         ?c  "\\(?:\\.[ch]$\\|\\.cpp\\)"     '(:foreground "navyblue"))
+  (filetree-add-filetype "PDF"       ?d  "\.pdf$"  '(:foreground "maroon"))
+  (filetree-add-filetype "Matlab"    ?m  "\.m$"    '(:foreground "orange"))
+  (filetree-add-filetype "Text"      ?t  "\.txt$"  '(:foreground "gray50")))
+```
+The default face is specified by filetree-default-file-face.
