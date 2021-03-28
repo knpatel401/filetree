@@ -1,8 +1,10 @@
-;;; filetree.el --- file tree view/manipulatation package                     -*- lexical-binding: t; -*-
+;;; filetree.el --- File tree view/manipulatation package                     -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020 Ketan Patel
 ;;
 ;; Author: Ketan Patel <knpatel401@gmail.com>
+;; URL: https://github.com/knpatel401/filetree
+;; Package-Requires: ((emacs "27.1"))
 ;; Version: 1.0.0
 ;; Package-Requires: ((dash "2.12.0"))
 ;;; Commentary:
@@ -32,7 +34,7 @@
 ;; External functions/variables
 (declare-function org-narrow-to-subtree "org" ())
 (defvar recentf-list)
-(defvar text-scale-mode-amount 0)
+;;(defvar text-scale-mode-amount 0)
 
 (defgroup filetree nil
   "Tree view of file list and file notes."
@@ -43,10 +45,12 @@
 
 (defconst filetree-buffer-name "*filetree*")
 
-(defcustom filetree-notes-file "~/.emacs.d/filetree-notes.org"
+(defcustom filetree-notes-file (concat user-emacs-directory
+                                       "filetree-notes.org")
   "File used for file specific notes."
   :type 'file)
-(defcustom filetree-saved-lists-file "~/.emacs.d/filetree-saved-lists.el"
+(defcustom filetree-saved-lists-file (concat user-emacs-directory
+                                             "filetree-saved-lists.el")
   "File used for saved file lists."
   :type 'file)
 (defcustom filetree-default-file-face 'default
@@ -896,8 +900,8 @@ Info determined from 'filetree-filetype-list' and 'filetree-default-file-face'."
   "Run grep on files in 'currentFileList'.
 Takes input from user for grep pattern."
   (interactive)
-  (if (version< emacs-version "27")
-      (message "filetree-grep not supported for emacs versions before 27")
+  (if (version< emacs-version "27.1")
+      (message "filetree-grep not supported for emacs versions before 27.1")
     (let* ((myFileTree-regex (read-string "Type search string:"))
            (xrefs nil)
            (fetcher
