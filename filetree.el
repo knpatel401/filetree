@@ -33,6 +33,8 @@
 
 ;; External functions/variables
 (declare-function org-narrow-to-subtree "org" ())
+(declare-function all-the-icons-icon-for-dir "all-the-icons")
+(declare-function all-the-icons-icon-for-file "all-the-icons")
 (defvar recentf-list)
 ;;(defvar text-scale-mode-amount 0)
 
