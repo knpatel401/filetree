@@ -13,16 +13,16 @@ The file notes enables the user to write and display (org-mode) notes associated
 
 ### Starting and Exit Viewer
 The following commands start the viewer with the corresponding file list
-| Command                        | Comment                                       |
-|--------------------------------|-----------------------------------------------|
-| filetree-select-file-list      | select file list from perviously saved lists  |
-| filetree-showRecentfFiles      | populate files from recentf-list              |
-| filetree-showCurDir            | populate files from current dir               |
-| filetree-showCurDirRecursively | populate files from current dir (recursively) | 
-| filetree-showCurBuffers        | populate files from buffer-list               |
-| filetree-showFilesWithNotes    | populate file list with files with "notes"    |
-| filetree-showFiles             | populate files from file list in argument     |
-| filetree-close-session         | exit viewer (tied to q in keymap)             |
+| Command                           | Comment                                       |
+|-----------------------------------|-----------------------------------------------|
+| filetree-select-file-list         | select file list from perviously saved lists  |
+| filetree-show-recentf-files       | populate files from recentf-list              |
+| filetree-show-cur-dir             | populate files from current dir               |
+| filetree-show-cur-dir-recursively | populate files from current dir (recursively) | 
+| filetree-show-cur-buffers         | populate files from buffer-list               |
+| filetree-show-files-with-notes    | populate file list with files with "notes"    |
+| filetree-show-files               | populate files from file list in argument     |
+| filetree-close-session            | exit viewer (tied to q in keymap)             |
 
 
 ### Navigation
@@ -39,24 +39,24 @@ Within the *Filetree* window the following navigation commands can be used
 |---------------------------------|---------|---------------------------------------------|
 | filetree-filter                 | f       | <ADD>                                       |
 | filetree-helm-filter            | s       | helm-based search                           |
-| filetree-expandDir              | e       | Add files in directory at point             |
-| filetree-expandDirRecursively   | E       | Add files in directory at point recursively |
-| filetree-reduceListBy10         | -       |                                             |
-| filetree-pop-fileListStack      | b       | undo prev filter/expansion operation        |
+| filetree-expand-dir             | e       | Add files in directory at point             |
+| filetree-expand-dir-recursively | E       | Add files in directory at point recursively |
+| filetree-reduce-list-by-10      | -       |                                             |
+| filetree-pop-file-list-stack    | b       | undo prev filter/expansion operation        |
 
 Notes:
-* The file list is added to a stack after each filtering operations (filetree-filter, filetree-helm-filter, filetree-reduceListBy10), and the filtering operation can be undone by popping off the stack (filetree-pop-fileListStack).
+* The file list is added to a stack after each filtering operations (filetree-filter, filetree-helm-filter, filetree-reduce-list-by-10), and the filtering operation can be undone by popping off the stack (filetree-pop-file-list-stack).
 * Selecting (by pressing RETURN or clicking) on a file in the Filetree buffer opens the file.  Selecting on a directory narrows to the chosen subtree.
-* The filetree-toggle-combinedDirNames command can be helpful when wanted to use filetree-expand (or filetree-expandDirRecursively) on a directory one or more levels above a file in the file list.
+* The filetree-toggle-combined-dir-names command can be helpful when wanted to use filetree-expand (or filetree-expand-dir-recursively) on a directory one or more levels above a file in the file list.
 
 ### View modes
-| Command                         | key map | Comment                                     |
-|---------------------------------|---------|---------------------------------------------|
-| filetree-set-maxDepth           | 0-9     | set max depth of tree to view 0=max         |
-| filetree-cycle-maxDepth         | <none>  | cycle through max depth                     |
-| filetree-toggle-combineDirNames | /       | toggle combining dir/subdirs in dir name    |
-| filetree-toggle-flat-vs-tree    | .       | toggle between tree and flat view           |
-| filetree-toggle-use-all-icons   | ;       | toggle use-all-icons icons (if installed)   |
+| Command                           | key map | Comment                                     |
+|-----------------------------------|---------|---------------------------------------------|
+| filetree-set-max-depth            | 0-9     | set max depth of tree to view 0=max         |
+| filetree-cycle-max-depth          | <none>  | cycle through max depth                     |
+| filetree-toggle-combine-dir-names | /       | toggle combining dir/subdirs in dir name    |
+| filetree-toggle-flat-vs-tree      | .       | toggle between tree and flat view           |
+| filetree-toggle-use-all-icons     | ;       | toggle use-all-icons icons (if installed)   |
 
 
 ### Operations
@@ -105,7 +105,7 @@ Within the filetree buffer, the "i" key will toggle the side window with the not
 Note enabling use-all-the-icons can make some of the operations sluggish if the file list is large.
 
 ### Faces, marks, and misc
-The variable filetree-excludeList is a list of regex for files to ignore.
+The variable filetree-exclude-list is a list of regex for files to ignore.
 
 The marks used to draw the file trees can be customized.  Here is the list of symbols that are used:
 filetree-symb-for-root filetree-symb-for-box, filetree-symb-for-vertical-pipe, filetree-symb-for-horizontal-pipe, filetree-symb-for-left-elbow, filetree-symb-for-right-elbow, filetree-symb-for-branch-and-cont, filetree-symb-for-file-node)
