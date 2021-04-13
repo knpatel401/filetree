@@ -2,10 +2,10 @@
 Filetree is a package that provides two basic functions:
 
 * **File tree viewer**
-The viewer displays a file list as a directory tree in a special buffer.  The file list can be populated from any list of files.  There are functions to populate from a number of common sources: recentf, files in buffer-list, files in the current directory, and files found recursively in the current directory.  Within the viewer, the file list can be filtered and expanded in various ways and operations can be performed on the filtered file list (e.g., grep over files in list).  Multiple file lists can be saved and retrieved between sessions.
+The viewer displays a file list as a directory tree in a special buffer.  The file list can be populated from any list of files.  There are functions to populate from a number of common sources: recentf, files in buffer-list, files in the current directory, and files found recursively in the current directory.  Within the viewer, the file list can be filtered and expanded in various ways and operations can be performed on the filtered file list (e.g., grep over files in list, open file, etc.).  Multiple file lists can be saved and retrieved between sessions.
 
 * **File notes**
-The file notes enables the user to write and display (org-mode) notes associated with individual files and directories.  The note can be displayed in a side buffer either when cycling through files in the file tree viewer or when the file is open in a buffer.  The notes are kept in a single org-mode file with a heading for each file/directory.
+The file notes enable the user to write and display (org-mode) notes associated with individual files and directories.  The note can be displayed in a side buffer either when cycling through files in the file tree viewer or when the file is open in a buffer.  The notes are kept in a single org-mode file with a heading for each file/directory.
 
 ![filetree demo](filetree_demo.gif)
 
@@ -85,7 +85,7 @@ In order to go to the entry for a file (and create an entry if it doesn't exist)
 ```
 The same command will open and close (after saving) the notes buffer in the side window.
 
-Within the filetree buffer, the "i" key will toggle the side window with the notes file.  The notes will dynamically narrow to the relevant part of the file as the user navigates the notes window.  If there is no note entry for the file, then the message "No File Note Entry" will be shown in the side window.
+Within the filetree buffer, the "i" key will toggle the side window with the notes file.  The notes will dynamically narrow to the relevant part of the file as the user navigates the file tree.  If there is no note entry for the file, then the message "No File Note Entry" will be shown in the side window.
 | Command                         | key map | Comment                                     |
 |---------------------------------|---------|---------------------------------------------|
 | filetree-toggle-info-buffer     | i       | Toggle info buffer in side window           |
@@ -100,8 +100,10 @@ Within the filetree buffer, the "i" key will toggle the side window with the not
 | filetree-saved-lists-file | ~/.emacs.d/filetree-saved-lists.el | File used for saved file lists |
 
 ### Settings related to startup state
-| filetree-info-window       | nil  | Set to t to show notes/info side window at start |
-| filetree-use-all-the-icons | nil  | Set to t to show icons for files/dirs            |
+| Parameter                  | default  | Comment                                          |
+|----------------------------|----------|--------------------------------------------------|
+| filetree-info-window       | nil      | Set to t to show notes/info side window at start |
+| filetree-use-all-the-icons | nil      | Set to t to show icons for files/dirs            |
 Note enabling use-all-the-icons can make some of the operations sluggish if the file list is large.
 
 ### Faces, marks, and misc
