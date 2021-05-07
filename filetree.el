@@ -98,6 +98,9 @@ This can also be toggled using `filetree-toggle-info-buffer'."
   '("~$" "#$" ".git\/" ".gitignore$" "\/\.\/$" "\/\.\.\/$" ".DS_Store$")
   "List of regex for files to exclude from file list."
   :type '(repeat regexp))
+(defcustom filetree-helm-candidate-number-limit 10000
+  "Maximum number of candidates to show in tree when using helm-based filtering."
+  :type 'integer)
 
 (defgroup filetree-symb-for nil
   "Symbols used for drawing tree in filetree package."
@@ -149,6 +152,7 @@ This can also be toggled using `filetree-toggle-info-buffer'."
 (defvar filetree-helm-source
   '((name . "filetree")
     (candidates . filetree-current-file-list)
+    (candidate-number-limit . filetree-helm-candidate-number-limit)
     (cleanup . (lambda ()
                  (remove-hook 'helm-after-update-hook
                               #'filetree-helm-hook)
@@ -191,6 +195,8 @@ This is populated using `filetree-add-filetype', for example see
     (define-key map "f" 'filetree-filter)
     (define-key map "/" 'filetree-toggle-combine-dir-names)
     (define-key map "b" 'filetree-pop-file-list-stack)
+    (define-key map "-" 'filetree-diff-with-file-list-stack)
+    (define-key map "+" 'filetree-union-with-file-list-stack)
     (define-key map "g" 'filetree-grep)
     (define-key map "d" 'filetree-run-dired)
     (define-key map "e" 'filetree-expand-dir)
@@ -199,7 +205,7 @@ This is populated using `filetree-add-filetype', for example see
     (define-key map "L" 'filetree-select-file-list)
     (define-key map "S" 'filetree-save-list)
     (define-key map "D" 'filetree-delete-list)
-    (define-key map "-" 'filetree-reduce-list-by-10)
+    ;; (define-key map "-" 'filetree-reduce-list-by-10)
     (define-key map "." 'filetree-toggle-flat-vs-tree)
     (define-key map "i" 'filetree-toggle-info-buffer)
     (define-key map "I" (lambda ()
@@ -728,14 +734,18 @@ TODO: Break into smaller functions and clean-up."
   (insert filetree-symb-for-vertical-pipe " "
           (propertize "# files: " 'font-lock-face 'bold)
           (number-to-string (length filetree-current-file-list))
-          (propertize "\tMax depth: " 'font-lock-face 'bold)
+          (propertize "\t\tMax depth: " 'font-lock-face 'bold)
           (if (> filetree-max-depth 0)
               (number-to-string filetree-max-depth)
             "full")
-          "\t"
+          "\t\t"
+          (propertize "Stack size: " 'font-lock-face 'bold)
+          (number-to-string (- (length filetree-file-list-stack) 1))
+          "\t\t"
           (if filetree-show-flat-list
               (propertize "Flat view" 'font-lock-face '(:foreground "blue"))
             (propertize "Tree view" 'font-lock-face '(:foreground "DarkOliveGreen4")))
+
           " \n" filetree-symb-for-left-elbow)
   (insert (make-string (+ (point) 1) ?\u2500))
   (insert filetree-symb-for-right-elbow "\n")
@@ -898,7 +908,24 @@ This function should be called after any change to 'filetree-current-file-list'.
   (if (> (length filetree-file-list-stack) 1)
       (setq filetree-file-list-stack (cdr filetree-file-list-stack)))
   (filetree-update-buffer))
-  
+
+(defun filetree-diff-with-file-list-stack ()
+  "Filter the previous file-list on the stack to remove all files in the current file-list."
+  (interactive)
+  (if (> (length filetree-file-list-stack) 2)
+      (progn
+        (setq filetree-current-file-list (-difference (car (cdr filetree-file-list-stack))
+                                                      filetree-current-file-list))
+        (filetree-update-buffer))))
+
+(defun filetree-union-with-file-list-stack ()
+  "Add the previous file-list on the stack to the current file-list."
+  (interactive)
+  (if (> (length filetree-file-list-stack) 2)
+      (progn
+        (setq filetree-current-file-list (-union (car (cdr filetree-file-list-stack))
+                                                 filetree-current-file-list))
+        (filetree-update-buffer))))
 
 (defun filetree-narrow (subtree)
   "Narrow file tree to SUBTREE."

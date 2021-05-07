@@ -35,19 +35,22 @@ Within the *Filetree* window the following navigation commands can be used
 | filetree-prev-branch | TAB         |                 |
 
 ### Filtering and Expanding
-| Command                         | key map | Comment                                     |
-|---------------------------------|---------|---------------------------------------------|
-| filetree-filter                 | f       | <ADD>                                       |
-| filetree-helm-filter            | s       | helm-based search                           |
-| filetree-expand-dir             | e       | Add files in directory at point             |
-| filetree-expand-dir-recursively | E       | Add files in directory at point recursively |
-| filetree-reduce-list-by-10      | -       |                                             |
-| filetree-pop-file-list-stack    | b       | undo prev filter/expansion operation        |
+| Command                             | key map | Comment                                                                     |
+|-------------------------------------|---------|-----------------------------------------------------------------------------|
+| filetree-filter                     | f       | <ADD>                                                                       |
+| filetree-helm-filter                | s       | helm-based search                                                           |
+| filetree-expand-dir                 | e       | Add files in directory at point                                             |
+| filetree-expand-dir-recursively     | E       | Add files in directory at point recursively                                 |
+| filetree-reduce-list-by-10          | None    |                                                                             |
+| filetree-pop-file-list-stack        | b       | undo prev filter/expansion operation                                        |
+| filetree-diff-with-file-list-stack  | -       | remove files in current file-list from list on stack and make new file-list |
+| filetree-union-with-file-list-stack | +       | combine files in current file-list and list on stack into new file-list     |
 
 Notes:
 * The file list is added to a stack after each filtering operations (filetree-filter, filetree-helm-filter, filetree-reduce-list-by-10), and the filtering operation can be undone by popping off the stack (filetree-pop-file-list-stack).
 * Selecting (by pressing RETURN or clicking) on a file in the Filetree buffer opens the file.  Selecting on a directory narrows to the chosen subtree.
 * The filetree-toggle-combined-dir-names command can be helpful when wanted to use filetree-expand (or filetree-expand-dir-recursively) on a directory one or more levels above a file in the file list.
+* The filetree-diff-with-file-list-stack command can be helpful for doing "complementary" filters, e.g., filtering for all files with test and then issuing the command will have the effect of removing all the files with test.
 
 ### View modes
 | Command                           | key map | Comment                                     |
@@ -104,6 +107,7 @@ Within the filetree buffer, the "i" key will toggle the side window with the not
 |----------------------------|----------|--------------------------------------------------|
 | filetree-info-window       | nil      | Set to t to show notes/info side window at start |
 | filetree-use-all-the-icons | nil      | Set to t to show icons for files/dirs            |
+
 Note enabling use-all-the-icons can make some of the operations sluggish if the file list is large.
 
 ### Faces, marks, and misc
