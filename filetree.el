@@ -26,19 +26,19 @@
 
 ;; File tree viewer
 ;;  The viewer displays a file list as a directory tree in a
-;;  special buffer. The file list can be populated from any list of files.
+;;  special buffer.  The file list can be populated from any list of files.
 ;;  There are functions to populate from a number of common sources: recentf,
 ;;  files in buffer-list, files in the current directory, and files found
-;;  recursively in the current directory. Within the viewer, the file list can
+;;  recursively in the current directory.  Within the viewer, the file list can
 ;;  be filtered and expanded in various ways and operations can be performed on
-;;  the filtered file list (e.g., grep over files in list). Multiple file lists
+;;  the filtered file list (e.g., grep over files in list).  Multiple file lists
 ;;  can be saved and retrieved between sessions.
 ;;
 ;; File notes
 ;;  The file notes enables the user to write and display (org-mode) notes
-;;  associated with individual files and directories. The note can be displayed
+;;  associated with individual files and directories.  The note can be displayed
 ;;  in a side buffer either when cycling through files in the file tree viewer
-;;  or when the file is open in a buffer. The notes are kept in a single org-mode
+;;  or when the file is open in a buffer.  The notes are kept in a single org-mode
 ;;  file with a heading for each file/directory.
 ;;
 ;; To use add the following to your ~/.emacs:
@@ -410,14 +410,14 @@ expression to filter with."
   (interactive)
   (setq filetree-max-depth (% (+ filetree-max-depth 1)
                              filetree-overall-depth))
-  (filetree-update-buffer))
+  (filetree-update-buffer t))
   
 (defun filetree-set-max-depth (&optional max-depth)
   "Set depth of displayed file tree to MAX-DEPTH.
 If maxdepth not specified, show full tree."
   (interactive)
   (setq filetree-max-depth (or max-depth 0))
-  (filetree-update-buffer))
+  (filetree-update-buffer t))
 
 (defun filetree-set-max-depth-1 ()
   "Set depth of displayed file to 1."
@@ -603,7 +603,7 @@ In other wrods go to prev branch of tree."
   (if filetree-show-flat-list
       (setq filetree-show-flat-list nil)
     (setq filetree-show-flat-list t))
-  (filetree-update-buffer))
+  (filetree-update-buffer t))
 
 (defun filetree-toggle-combine-dir-names ()
   "Toggle combine dir names."
@@ -611,7 +611,7 @@ In other wrods go to prev branch of tree."
   (if filetree-combine-dir-names
       (setq filetree-combine-dir-names nil)
     (setq filetree-combine-dir-names t))
-  (filetree-update-buffer))
+  (filetree-update-buffer t))
 
 (defun filetree-toggle-use-all-icons ()
   "Toggle use-all-icons."
@@ -620,7 +620,7 @@ In other wrods go to prev branch of tree."
         (if (require 'all-the-icons nil 'noerror)
             (not filetree-use-all-the-icons)
           nil))
-  (filetree-update-buffer))
+  (filetree-update-buffer t))
   
 (defun filetree-print-tree (dir-tree depth-list)
   "Print directory tree.
@@ -867,9 +867,10 @@ This is used when first starting an info note file."
                               "\u2518\n")
                       'font-lock-face '(:foreground "red"))))
 
-(defun filetree-update-buffer ()
+(defun filetree-update-buffer (&optional skip-update-stack)
   "Update the display buffer (following some change).
-This function should be called after any change to 'filetree-current-file-list'."
+This function should be called after any change to 'filetree-current-file-list'.
+If SKIP-UPDATE-STACK is t, `filetree-file-list-stack' is not updated."
   (interactive)
   (let ((text-scale-previous (buffer-local-value 'text-scale-mode-amount
                                                  (current-buffer))))
@@ -879,9 +880,10 @@ This function should be called after any change to 'filetree-current-file-list'.
           (setq buffer-read-only nil)
           (erase-buffer)
           (setq filetree-current-file-list (-distinct (-non-nil
-                                                     filetree-current-file-list)))
-          (setq filetree-file-list-stack (cons (copy-sequence filetree-current-file-list)
-                                             filetree-file-list-stack))
+                                                       filetree-current-file-list)))
+          (if (not skip-update-stack)
+              (setq filetree-file-list-stack (cons (copy-sequence filetree-current-file-list)
+                                                   filetree-file-list-stack)))
           (filetree-print-header)
           (if filetree-show-flat-list
               (filetree-print-flat filetree-current-file-list)
@@ -981,7 +983,7 @@ Takes input from user for grep pattern."
   (interactive)
   (setq filetree-current-file-list (car (helm--collect-matches
                                        (list (helm-get-current-source)))))
-  (filetree-update-buffer))
+  (filetree-update-buffer t))
 
 (defun filetree-select-file-list ()
   "Select file list from saved file lists."
