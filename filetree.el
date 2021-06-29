@@ -78,7 +78,7 @@
                                        "filetree-notes.org")
   "File used for file specific notes."
   :type 'file)
-(defcustom filetree-relative-notes-filename "filetree-notes.org"
+(defcustom filetree-relative-notes-filename "filetree-notes-local.org"
   "Filename for file specific notes file with relative path"
   :type 'string)
 
@@ -814,22 +814,24 @@ From https://stackoverflow.com/questions/14095189/walk-up-the-directory-tree/140
   "Find local notes file.
 Check in the FILE-DIR directory hierarchy, if not found
 there then return nil."
-  (let ((my-dir file-dir)
-        (my-file nil)
-        (found nil)
-        (done nil))
-    (while (not done)
-      (setq my-file (concat my-dir "/" filetree-relative-notes-filename))
-      (setq found (file-exists-p my-file))
-      (setq done (or (equal "/" my-dir)
-                     (not my-dir)
-                     found))
-      (if my-dir 
-          (setq my-dir (filetree-parent-directory my-dir))))
-    (if (not found)
-        ;; filetree-notes-file
-        nil
-      my-file)))
+  (if (and file-dir (file-remote-p file-dir))
+      nil
+    (let ((my-dir file-dir)
+          (my-file nil)
+          (found nil)
+          (done nil))
+      (while (not done)
+        (setq my-file (concat my-dir filetree-relative-notes-filename))
+        (setq found (file-exists-p my-file))
+        (setq done (or (equal "/" my-dir)
+                       (not my-dir)
+                       found))
+        (if my-dir 
+            (setq my-dir (filetree-parent-directory my-dir))))
+      (if (not found)
+          ;; filetree-notes-file
+          nil
+        my-file))))
 
 (defun filetree-toggle-info-buffer (&optional switch-to-info-flag)
   "Toggle info buffer in side window.
@@ -865,26 +867,36 @@ If SWITCH-TO-INFO-FLAG is true, then switch to the info window afterwards."
 If CURENT-FILE-NAME not given use 'buffer-file-name'.
 If no entry in info buffer for this file, create new info buffer entry."
   ;; TODO: clean up
-  (let ((filetree-create-new-entry (if current-file-name nil t)))
+  (let ((filetree-create-new-entry (if current-file-name nil t))
+        (filetree-info-buffer-new nil))
     (unless current-file-name (setq current-file-name (buffer-file-name)))
     (unless current-file-name (setq current-file-name "No File Note Entry"))
     (let ((current-window (selected-window)))
       (select-window filetree-info-window)
       (switch-to-buffer filetree-info-buffer)
-      (save-buffer)
+      ;;(save-buffer)
       (setq local-notes-file (filetree-find-notes-file current-file-name))
       (if local-notes-file
           (progn
-            (setq filetree-info-buffer (find-file-noselect local-notes-file))
+            (setq filetree-info-buffer-new (find-file-noselect local-notes-file))
             (setq current-file-name (concat "./"
                                             (file-relative-name current-file-name
                                                                 (file-name-directory
                                                                  local-notes-file)))))
-        (setq filetree-info-buffer (find-file-noselect filetree-notes-file)))
+        (setq filetree-info-buffer-new (find-file-noselect filetree-notes-file)))
+      (if (and (not (equal filetree-info-buffer-new filetree-info-buffer))
+               (buffer-live-p filetree-info-buffer))
+          (progn
+            (save-buffer)
+            (kill-buffer filetree-info-buffer)
+            (setq filetree-info-buffer filetree-info-buffer-new)
+            (setq filetree-info-window
+                  (display-buffer-in-side-window filetree-info-buffer
+                                                 '((side . right))))))
+      (select-window filetree-info-window)
       (switch-to-buffer filetree-info-buffer)
       (if (get-buffer-window filetree-info-buffer)
           (let ((search-string (concat "* [[" current-file-name "]")))
-            ;;(find-file filetree-notes-file)
             (widen)
             (goto-char (point-min))
             (unless (search-forward search-string nil t)
