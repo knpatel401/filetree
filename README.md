@@ -9,6 +9,9 @@ The file notes enable the user to write and display (org-mode) notes associated 
 
 ![filetree demo](filetree_demo.gif)
 
+## Demo Video
+A video demoing some of the primary functionality is on [Youtube here](https://youtu.be/-KrMaLq8Bms).  The corresponding notes are in this repo [demo_notes.org](demo_notes.org).
+
 ## File tree Viewer
 
 ### Starting and Exit Viewer
