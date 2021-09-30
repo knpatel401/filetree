@@ -56,6 +56,7 @@
 (require 'xref)
 (require 'helm)
 (require 'seq)
+(require 'vc)
 ;;(require 'cl-lib)
 
 ;; External functions/variables
@@ -70,7 +71,7 @@
   :group 'matching
   :prefix "filetree-")
 
-(defvar filetree-version "1.0")
+(defvar filetree-version "1.01")
 
 (defconst filetree-buffer-name "*filetree*")
 
@@ -79,7 +80,7 @@
   "File used for file specific notes."
   :type 'file)
 (defcustom filetree-relative-notes-filename "filetree-notes-local.org"
-  "Filename for file specific notes file with relative path"
+  "Filename for file specific notes file with relative path."
   :type 'string)
 
 (defcustom filetree-saved-lists-file (concat user-emacs-directory
@@ -136,6 +137,31 @@ This can also be toggled using `filetree-toggle-info-buffer'."
   "Symbol for file node."
   :type 'character)
 
+(defcustom filetree-info-cycle-list
+  '(;; cycle 0 - no info
+    ()
+    ;; cycle 1 - modes/size/last mod
+    (("Modes" 11 filetree-get-file-modes "right")
+     ("Size" 7 filetree-get-file-size "right")
+     ("Last Mod" 12 filetree-get-file-last-modified "left"))
+    ;; cycle 2 - modes/size/last mod + VC
+    (("Modes" 11 filetree-get-file-modes "right")
+     ("Size" 7 filetree-get-file-size "right")
+     ("Last Mod" 12 filetree-get-file-last-modified "left")
+     ("VC State" 10 filetree-get-vc-state "left"))
+    ;; cycle 3 - vc
+    (("VC State" 10 filetree-get-vc-state "left")))
+  "List of file info contents to show on left side of filetree window.
+Each entry of this list is itself a list of the columns of information
+to show.  A nil entry corresponds to showing no info.  Each entry of this
+list has the following entries:
+- column heading (this can be propertized if desired)
+- width of the column
+- function that take a file as argument and returns a (possibly propertized)
+  string to show
+- string with justification to use for the column contents
+  (left, right, center), default is left.")
+
 (defvar filetree-info-buffer nil)
 (defvar filetree-info-buffer-state nil)
 (defvar filetree-saved-lists '(("recentf" (lambda ()
@@ -169,6 +195,9 @@ This can also be toggled using `filetree-toggle-info-buffer'."
   "List of file types with filter shortcuts, regex for filetype, and face.
 This is populated using `filetree-add-filetype', for example see
 `filetree-configure-default-filetypes'")
+
+(defvar filetree-current-info-cycle 0
+  "This tracks the current state of file info on the left side of the window.")
 
 (defvar filetree-map
   (let ((map (make-sparse-keymap)))
@@ -218,6 +247,18 @@ This is populated using `filetree-add-filetype', for example see
                           (filetree-toggle-info-buffer t)))
     (define-key map "s" 'filetree-helm-filter)
     (define-key map ";" 'filetree-toggle-use-all-icons)
+    (define-key map "]" (lambda ()
+                          "Cycle through info views"
+                          (interactive)
+                          (setq filetree-current-info-cycle (mod (+ 1 filetree-current-info-cycle)
+                                                                 (length filetree-info-cycle-list)))
+                          (filetree-update-buffer t)))
+    (define-key map "[" (lambda ()
+                          "Cycle through info views"
+                          (interactive)
+                          (setq filetree-current-info-cycle (mod (- filetree-current-info-cycle 1)
+                                                                 (length filetree-info-cycle-list)))
+                          (filetree-update-buffer t)))
     map)
   "Keymap for filetree.")
 
@@ -251,6 +292,42 @@ custom function with calls to `filetree-add-filetype'"
   (filetree-add-filetype "Text"      ?t  "\.txt$"  '(:foreground "gray50")))
 
 (filetree-configure-default-filetypes)
+
+(defun filetree-get-vc-state (filename)
+  "Return a string with the `vc-state' of FILENAME."
+  (let ((entry (format "%s"
+                       (or
+                        (if (not (file-remote-p filename))
+                            (vc-state filename)
+                          "remote")
+                        ""))))
+    (put-text-property 0 (length entry) 'face '(:foreground "steel blue")
+                       entry)
+    entry))
+
+(defun filetree-get-file-size (filename)
+  "Return a string with the size of FILENAME."
+  (let ((attributes (file-attributes filename)))
+    (if attributes
+        (format "%s"
+                (file-size-human-readable
+                 (file-attribute-size attributes)))
+      "N/A")))
+
+(defun filetree-get-file-modes (filename)
+  "Return a string with the file modes of FILENAME."
+  (let ((attributes (file-attributes filename)))
+    (if attributes
+        (file-attribute-modes attributes)
+      "N/A")))
+
+(defun filetree-get-file-last-modified (filename)
+  "Return a string with the last modification time for FILENAME."
+  (let ((attributes (file-attributes filename)))
+    (if attributes
+        (format-time-string "%b %d %Y"
+                            (file-attribute-modification-time attributes))
+      "N/A")))
 
 (defun filetree-filter ()
   "Interactive function to filter 'filetree-current-file-list'.
@@ -656,22 +733,25 @@ TODO: Break into smaller functions and clean-up."
                                                                    "    "))
                                                      (butlast my-depth-list 1))))
                     (dir-contents (nth 2 this-entry))
-                    (filetree-dir-string nil))
-                (insert my-prefix)
+                    (filetree-dir-string nil)
+                    (marks-to-print ""))
                 (if (> (length my-depth-list) 1)
                     (if (> (car (last my-depth-list)) 0)
                         ;; branch and continue
-                        (insert " " filetree-symb-for-branch-and-cont
-                                filetree-symb-for-horizontal-pipe
-                                filetree-symb-for-horizontal-pipe " ")
+                        (setq marks-to-print (concat marks-to-print
+                                                     " " filetree-symb-for-branch-and-cont
+                                                     filetree-symb-for-horizontal-pipe
+                                                     filetree-symb-for-horizontal-pipe " "))
                       ;; last branch
-                      (insert " " filetree-symb-for-left-elbow
-                              filetree-symb-for-horizontal-pipe
-                              filetree-symb-for-horizontal-pipe " "))
+                      (setq marks-to-print (concat marks-to-print
+                                                   " " filetree-symb-for-left-elbow
+                                                   filetree-symb-for-horizontal-pipe
+                                                   filetree-symb-for-horizontal-pipe " ")))
                   ;; Tree root
-                  (insert " " filetree-symb-for-box
-                          filetree-symb-for-box
-                          filetree-symb-for-root " "))
+                  (setq marks-to-print (concat marks-to-print
+                                               " " filetree-symb-for-box
+                                               filetree-symb-for-box
+                                               filetree-symb-for-root " ")))
                 (setq filetree-dir-string this-name)
                 (if (= (length dir-contents) 1)
                     (setq this-type (car (car dir-contents))))
@@ -688,6 +768,9 @@ TODO: Break into smaller functions and clean-up."
                             (setq filetree-dir-string (concat filetree-dir-string
                                                               "/"  this-name))
                             (setq dir-contents (nth 2 this-entry))))))
+                (insert (filetree-extra-file-info (nth 3 this-entry)))
+                (insert my-prefix)
+                (insert marks-to-print)
                 (if filetree-use-all-the-icons
                     (insert (all-the-icons-icon-for-dir filetree-dir-string) " "))
                 (insert-text-button filetree-dir-string
@@ -719,6 +802,7 @@ TODO: Break into smaller functions and clean-up."
                                         filetree-symb-for-left-elbow
                                         filetree-symb-for-horizontal-pipe
                                         filetree-symb-for-file-node " ")))
+              (insert (filetree-extra-file-info my-link))
               (insert my-prefix)
               (let ((button-face (filetree-file-face file-text)))
                 (if filetree-use-all-the-icons
@@ -733,27 +817,76 @@ TODO: Break into smaller functions and clean-up."
                 (- remaining-entries 1)))
       (setq my-dir-tree (cdr my-dir-tree))))))
 
+(defun filetree-extra-file-info (file-or-dir)
+  "Helper function that gets extra info for FILE-OR-DIR."
+  (let ((extra-info (nth filetree-current-info-cycle filetree-info-cycle-list)))
+    (apply #'concat
+           (mapcar (lambda (x)
+                     (let ((field-size (nth 1 x))
+                           (field-justification (nth 3 x))
+                           (entry (apply (nth 2 x)
+                                         (list file-or-dir))))
+                       (if (> (length entry) (- field-size 1))
+                           (concat (substring entry 0 (- field-size 2)) "\u21e2 ")
+                         (if (string= field-justification "center")
+                             (let ((space-length (- field-size
+                                                    (length entry))))
+                               (concat (make-string (/ space-length 2) ? )
+                                       entry
+                                       (make-string (- space-length
+                                                       (/ space-length 2)) ? )))
+                           (if (string= field-justification "right")
+                               (concat
+                                (make-string (- (- field-size 1)
+                                                (length entry)) ? )
+                                entry " ")
+                             (concat entry
+                                     (make-string (- field-size
+                                                     (length entry)) ? )))))))
+                   extra-info))))
+        
 (defun filetree-print-header ()
   "Print header at top of window."
-  (insert filetree-symb-for-vertical-pipe " "
-          (propertize "# files: " 'font-lock-face 'bold)
-          (number-to-string (length filetree-current-file-list))
-          (propertize "\t\tMax depth: " 'font-lock-face 'bold)
-          (if (> filetree-max-depth 0)
-              (number-to-string filetree-max-depth)
-            "full")
-          "\t\t"
-          (propertize "Stack size: " 'font-lock-face 'bold)
-          (number-to-string (- (length filetree-file-list-stack) 1))
-          "\t\t"
-          (if filetree-show-flat-list
-              (propertize "Flat view" 'font-lock-face '(:foreground "blue"))
-            (propertize "Tree view" 'font-lock-face '(:foreground "DarkOliveGreen4")))
-
-          " \n" filetree-symb-for-left-elbow)
-  (insert (make-string (+ (point) 1) ?\u2500))
-  (insert filetree-symb-for-right-elbow "\n")
-  (setq filetree-start-position (point)))
+  (let ((extra-info (nth filetree-current-info-cycle filetree-info-cycle-list))
+        (header-length nil))
+    (insert (apply #'concat
+                   (mapcar (lambda (x)
+                             (let ((field-size (nth 1 x))
+                                   (entry (car x)))
+                               (if (> (length entry) (- field-size 1))
+                                   (concat (substring entry 0 (- field-size 2)) "\u21e2 ")
+                                 (let ((space-length (- field-size
+                                                        (length entry))))
+                                   (concat (make-string (/ space-length 2) ? )
+                                           entry
+                                           (make-string (- space-length
+                                                           (/ space-length 2)) ? ))))))
+                           extra-info)))
+    (insert filetree-symb-for-vertical-pipe " "
+            (propertize "# files: " 'font-lock-face 'bold)
+            (number-to-string (length filetree-current-file-list))
+            (propertize "\t\tMax depth: " 'font-lock-face 'bold)
+            (if (> filetree-max-depth 0)
+                (number-to-string filetree-max-depth)
+              "full")
+            "\t\t"
+            (propertize "Stack size: " 'font-lock-face 'bold)
+            (number-to-string (- (length filetree-file-list-stack) 1))
+            ;; "\t\t"
+            ;; (if filetree-show-flat-list
+            ;;     (propertize "Flat view" 'font-lock-face '(:foreground "blue"))
+            ;;   (propertize "Tree view" 'font-lock-face '(:foreground "DarkOliveGreen4")))
+            " \n")
+    (setq header-length (point))
+    (insert (make-string (apply '+ (mapcar (lambda (x)
+                                             (nth 1 x))
+                                           extra-info)) ?\u2500)
+            filetree-symb-for-left-elbow)
+    (setq header-length (- header-length
+                           (- (point) header-length)))
+    (insert (make-string header-length ?\u2500))
+    (insert filetree-symb-for-right-elbow "\n")
+    (setq filetree-start-position (point))))
 
 (defun filetree-create-single-node-tree (filename)
   "Create a tree for FILENAME."
@@ -826,7 +959,7 @@ there then return nil."
         (setq done (or (equal "/" my-dir)
                        (not my-dir)
                        found))
-        (if my-dir 
+        (if my-dir
             (setq my-dir (filetree-parent-directory my-dir))))
       (if (not found)
           ;; filetree-notes-file
@@ -847,7 +980,6 @@ If SWITCH-TO-INFO-FLAG is true, then switch to the info window afterwards."
           (save-buffer)
           (kill-buffer filetree-info-buffer)
           (setq filetree-info-buffer-state nil))
-      (setq use-local-notes-file (filetree-find-notes-file file-for-info-buffer))
       (setq filetree-info-buffer (find-file-noselect (or
                                                       (filetree-find-notes-file
                                                           file-for-info-buffer)
@@ -871,7 +1003,8 @@ If no entry in info buffer for this file, create new info buffer entry."
         (filetree-info-buffer-new nil))
     (unless current-file-name (setq current-file-name (buffer-file-name)))
     (unless current-file-name (setq current-file-name "No File Note Entry"))
-    (let ((current-window (selected-window)))
+    (let ((current-window (selected-window))
+          (local-notes-file nil))
       (select-window filetree-info-window)
       (switch-to-buffer filetree-info-buffer)
       ;;(save-buffer)
