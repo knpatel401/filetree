@@ -56,14 +56,15 @@ Notes:
 * The filetree-diff-with-file-list-stack command can be helpful for doing "complementary" filters, e.g., filtering for all files with test and then issuing the command will have the effect of removing all the files with test.
 
 ### View modes
-| Command                           | key map | Comment                                     |
-|-----------------------------------|---------|---------------------------------------------|
-| filetree-set-max-depth            | 0-9     | set max depth of tree to view 0=max         |
-| filetree-cycle-max-depth          | <none>  | cycle through max depth                     |
-| filetree-toggle-combine-dir-names | /       | toggle combining dir/subdirs in dir name    |
-| filetree-toggle-flat-vs-tree      | .       | toggle between tree and flat view           |
-| filetree-toggle-use-all-icons     | ;       | toggle use-all-icons icons (if installed)   |
-
+| Command                           | key map | Comment                                    |
+|-----------------------------------|---------|--------------------------------------------|
+| filetree-set-max-depth            | 0-9     | set max depth of tree to view 0=max        |
+| filetree-cycle-max-depth          | <none>  | cycle through max depth                    |
+| filetree-toggle-combine-dir-names | /       | toggle combining dir/subdirs in dir name   |
+| filetree-toggle-flat-vs-tree      | .       | toggle between tree and flat view          |
+| filetree-toggle-use-all-icons     | ;       | toggle use-all-icons icons (if installed)  |
+|                                   | ]       | cycle right through info views on the left |
+|                                   | [       | cycle left through info views on the left  |
 
 ### Operations
 | Command       | key map | Comment                                         |
@@ -114,13 +115,36 @@ Within the filetree buffer, the "i" key will toggle the side window with the not
 | filetree-info-window       | nil      | Set to t to show notes/info side window at start |
 | filetree-use-all-the-icons | nil      | Set to t to show icons for files/dirs            |
 
-Note enabling use-all-the-icons can make some of the operations sluggish if the file list is large.
+Note enabling use-all-the-icons can make some of the operations sluggish if the file list is large.  Also, you may need to set the scaling for the icons to match the height of the text:
+```
+(setq all-the-icons-scale-factor 1)
+```
+### Additional file info configuration
+Users can configure the information that can be cycled through and shown to the left of the filetree by customizing filetree--info-cycle-list.  This is a list of lists, where each entry in the list is a view set, and each view set is a list  corresponding to each of the columns of info to be displayed, and for each column of info the user specifies the column heading, column width, a function that takes a file or dir name as input and returns a (possibly "propertized") string with the info to display, and a setting for the column justification that should be used.
+
+The default value is 
+```
+  '(;; cycle 0 - no info
+    ()
+    ;; cycle 1 - modes/size/last mod
+    (("Modes" 11 filetree-get-file-modes "right")
+     ("Size" 7 filetree-get-file-size "right")
+     ("Last Mod" 12 filetree-get-file-last-modified "left"))
+    ;; cycle 2 - modes/size/last mod/vc
+    (("Modes" 11 filetree-get-file-modes "right")
+     ("Size" 7 filetree-get-file-size "right")
+     ("Last Mod" 12 filetree-get-file-last-modified "left")
+     ("VC State" 10 filetree-get-vc-state "left"))
+    ;; cycle 3 - vc
+    (("VC State" 10 filetree-get-vc-state "left")))
+```
+This corresponds to 4 view sets.  The first shows no information, the second shows the mode/size/last modification date for each file, the third adds the vc status as well, and finally the last one only shows the vc status.
 
 ### Faces, marks, and misc
 The variable filetree-exclude-list is a list of regex for files to ignore.
 
 The marks used to draw the file trees can be customized.  Here is the list of symbols that are used:
-filetree-symb-for-root filetree-symb-for-box, filetree-symb-for-vertical-pipe, filetree-symb-for-horizontal-pipe, filetree-symb-for-left-elbow, filetree-symb-for-right-elbow, filetree-symb-for-branch-and-cont, filetree-symb-for-file-node)
+filetree-symb-for-root filetree-symb-for-box, filetree-symb-for-vertical-pipe, filetree-symb-for-horizontal-pipe, filetree-symb-for-left-elbow, filetree-symb-for-right-elbow, filetree-symb-for-branch-and-cont, filetree-symb-for-file-node.
 
 The faces used for different file types as well as the shortcuts used to filter those file types are specified using 'filetree-add-filetype.  The function that sets the default settings can be used as an example (see below).  The calls to filetree-add-filetype has the following arguments: file type name, shortcut, regex, face.  Note (setq filetree-filetype-list nil) clears any previous filetype entries in filetree-filetype-list.
 ```
