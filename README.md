@@ -12,6 +12,16 @@ The file notes enable the user to write and display (org-mode) notes associated 
 ## Demo Video
 A video demoing some of the primary functionality is on [Youtube here](https://youtu.be/-KrMaLq8Bms).  The corresponding notes are in this repo [demo_notes.org](demo_notes.org).
 
+Here are links to sections of the video that cover specific topics.
+
+| Link to video section                                                   | Comment                                                                           |
+|-------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [Recentf wrapper](https://youtu.be/-KrMaLq8Bms?t=195)                   | This was the motivating use case for the package.                                 |
+| [Filtering and expanding file list](https://youtu.be/-KrMaLq8Bms?t=395) | This section covers some of the core functionality for file tree.                 |
+| [Other file lists](https://youtu.be/-KrMaLq8Bms?t=938)                  | Covers other ways to populate the file list (e.g., current dir, current buffers). |
+| [Grep within files](https://youtu.be/-KrMaLq8Bms?t=1111)                | Covers the search use case.                                                       |
+| [File Notes](https://youtu.be/-KrMaLq8Bms?t=1181)                       | Covers the file notes functionality.                                              |
+
 ## File tree Viewer
 
 ### Starting and Exit Viewer
@@ -120,25 +130,30 @@ Note enabling use-all-the-icons can make some of the operations sluggish if the 
 (setq all-the-icons-scale-factor 1)
 ```
 ### Additional file info configuration
-Users can configure the information that can be cycled through and shown to the left of the filetree by customizing filetree--info-cycle-list.  This is a list of lists, where each entry in the list is a view set, and each view set is a list  corresponding to each of the columns of info to be displayed, and for each column of info the user specifies the column heading, column width, a function that takes a file or dir name as input and returns a (possibly "propertized") string with the info to display, and a setting for the column justification that should be used.
+Users can configure the information that can be cycled through and shown to the left of the filetree by customizing filetree-info-cycle-list.  This is a list of lists, where each entry in the list is a view set (i.e., a set of columns to show), and each view set is a list  corresponding to each of the columns of info to be displayed;, for each column of info the user specifies the column heading, column width, a function that takes a file or dir name as input and returns a (possibly "propertized") string with the info to display, and a setting for the column justification that should be used.
 
 The default value is 
 ```
-  '(;; cycle 0 - no info
+  '(;; cycle 0 - show no additional info
     ()
     ;; cycle 1 - modes/size/last mod
     (("Modes" 11 filetree-get-file-modes "right")
      ("Size" 7 filetree-get-file-size "right")
      ("Last Mod" 12 filetree-get-file-last-modified "left"))
-    ;; cycle 2 - modes/size/last mod/vc
-    (("Modes" 11 filetree-get-file-modes "right")
-     ("Size" 7 filetree-get-file-size "right")
-     ("Last Mod" 12 filetree-get-file-last-modified "left")
-     ("VC State" 10 filetree-get-vc-state "left"))
-    ;; cycle 3 - vc
-    (("VC State" 10 filetree-get-vc-state "left")))
+    ;; cycle 2 - size/last mod
+    (("Size" 7 filetree-get-file-size "right")
+     ("Last Mod" 12 filetree-get-file-last-modified "left"))
+    ;; cycle 3 - last mod
+    (("Last Mod" 12 filetree-get-file-last-modified "left"))
+    ;; cycle 4 - last mod/modes
+    (("Last Mod" 12 filetree-get-file-last-modified "left")
+     ("Modes" 11 filetree-get-file-modes "right"))
+    ;; cycle 5 - last mod/modes/size
+    (("Last Mod" 12 filetree-get-file-last-modified "left")
+     ("Modes" 11 filetree-get-file-modes "right")
+     ("Size" 7 filetree-get-file-size "right")))
 ```
-This corresponds to 4 view sets.  The first shows no information, the second shows the mode/size/last modification date for each file, the third adds the vc status as well, and finally the last one only shows the vc status.
+This corresponds to 6 view sets.  The first shows no additional information, the second shows the mode/size/last modification date for each file, the third shows size/last modification, and so on.
 
 ### Faces, marks, and misc
 The variable filetree-exclude-list is a list of regex for files to ignore.

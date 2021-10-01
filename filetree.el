@@ -113,13 +113,18 @@ This can also be toggled using `filetree-toggle-info-buffer'."
     (("Modes" 11 filetree-get-file-modes "right")
      ("Size" 7 filetree-get-file-size "right")
      ("Last Mod" 12 filetree-get-file-last-modified "left"))
-    ;; cycle 2 - modes/size/last mod/vc
-    (("Modes" 11 filetree-get-file-modes "right")
-     ("Size" 7 filetree-get-file-size "right")
-     ("Last Mod" 12 filetree-get-file-last-modified "left")
-     ("VC State" 10 filetree-get-vc-state "left"))
-    ;; cycle 3 - vc
-    (("VC State" 10 filetree-get-vc-state "left")))
+    ;; cycle 2 - size/last mod
+    (("Size" 7 filetree-get-file-size "right")
+     ("Last Mod" 12 filetree-get-file-last-modified "left"))
+    ;; cycle 3 - last mod
+    (("Last Mod" 12 filetree-get-file-last-modified "left"))
+    ;; cycle 4 - last mod/modes
+    (("Last Mod" 12 filetree-get-file-last-modified "left")
+     ("Modes" 11 filetree-get-file-modes "right"))
+    ;; cycle 5 - last mod/modes/size
+    (("Last Mod" 12 filetree-get-file-last-modified "left")
+     ("Modes" 11 filetree-get-file-modes "right")
+     ("Size" 7 filetree-get-file-size "right")))    
   "List of file info contents to show on left side of filetree window.
 Each entry of this list is itself a list of the columns of information
 to show.  A nil entry corresponds to showing no info.  Each entry of this
@@ -296,17 +301,17 @@ custom function with calls to `filetree-add-filetype'"
 
 (filetree-configure-default-filetypes)
 
-(defun filetree-get-vc-state (filename)
-  "Return a string with the `vc-state' of FILENAME."
-  (let ((entry (format "%s"
-                       (or
-                        (if (not (file-remote-p filename))
-                            (vc-state filename)
-                          "remote")
-                        ""))))
-    (put-text-property 0 (length entry) 'face '(:foreground "steel blue")
-                       entry)
-    entry))
+;; (defun filetree-get-vc-state (filename)
+;;   "Return a string with the `vc-state' of FILENAME."
+;;   (let ((entry (format "%s"
+;;                        (or
+;;                         (if (not (file-remote-p filename))
+;;                             (vc-state filename)
+;;                           "remote")
+;;                         ""))))
+;;     (put-text-property 0 (length entry) 'face '(:foreground "steel blue")
+;;                        entry)
+;;     entry))
 
 (defun filetree-get-file-size (filename)
   "Return a string with the size of FILENAME."
@@ -321,8 +326,11 @@ custom function with calls to `filetree-add-filetype'"
   "Return a string with the file modes of FILENAME."
   (let ((attributes (file-attributes filename)))
     (if attributes
-        (file-attribute-modes attributes)
-      "N/A")))
+        (let ((modes (file-attribute-modes attributes)))
+          (if (string-prefix-p "d" modes)
+              (propertize modes 'font-lock-face 'bold)
+            modes))
+      "N/A    ")))
 
 (defun filetree-get-file-last-modified (filename)
   "Return a string with the last modification time for FILENAME."
@@ -852,19 +860,20 @@ TODO: Break into smaller functions and clean-up."
   "Print header at top of window."
   (let ((extra-info (nth filetree-current-info-cycle filetree-info-cycle-list))
         (header-length nil))
-    (insert (apply #'concat
-                   (mapcar (lambda (x)
-                             (let ((field-size (nth 1 x))
-                                   (entry (car x)))
-                               (if (> (length entry) (- field-size 1))
-                                   (concat (substring entry 0 (- field-size 2)) "\u21e2 ")
-                                 (let ((space-length (- field-size
-                                                        (length entry))))
-                                   (concat (make-string (/ space-length 2) ? )
-                                           entry
-                                           (make-string (- space-length
-                                                           (/ space-length 2)) ? ))))))
-                           extra-info)))
+    (insert (propertize (apply #'concat
+                               (mapcar (lambda (x)
+                                         (let ((field-size (nth 1 x))
+                                               (entry (car x)))
+                                           (if (> (length entry) (- field-size 1))
+                                               (concat (substring entry 0 (- field-size 2)) "\u21e2 ")
+                                             (let ((space-length (- field-size
+                                                                    (length entry))))
+                                               (concat (make-string (/ space-length 2) ? )
+                                                       entry
+                                                       (make-string (- space-length
+                                                                       (/ space-length 2)) ? ))))))
+                                       extra-info))
+                        'font-lock-face 'bold))
     (insert filetree-symb-for-vertical-pipe " "
             (propertize "# files: " 'font-lock-face 'bold)
             (number-to-string (length filetree-current-file-list))
