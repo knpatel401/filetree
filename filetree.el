@@ -106,6 +106,34 @@ This can also be toggled using `filetree-toggle-info-buffer'."
 (defcustom filetree-helm-candidate-number-limit 10000
   "Maximum number of candidates to show in tree when using helm-based filtering."
   :type 'integer)
+(defcustom filetree-info-cycle-list
+  '(;; cycle 0 - no info
+    ()
+    ;; cycle 1 - modes/size/last mod
+    (("Modes" 11 filetree-get-file-modes "right")
+     ("Size" 7 filetree-get-file-size "right")
+     ("Last Mod" 12 filetree-get-file-last-modified "left"))
+    ;; cycle 2 - modes/size/last mod/vc
+    (("Modes" 11 filetree-get-file-modes "right")
+     ("Size" 7 filetree-get-file-size "right")
+     ("Last Mod" 12 filetree-get-file-last-modified "left")
+     ("VC State" 10 filetree-get-vc-state "left"))
+    ;; cycle 3 - vc
+    (("VC State" 10 filetree-get-vc-state "left")))
+  "List of file info contents to show on left side of filetree window.
+Each entry of this list is itself a list of the columns of information
+to show.  A nil entry corresponds to showing no info.  Each entry of this
+list has the following entries:
+- column heading (this can be propertized if desired)
+- width of the column
+- function that take a file as argument and returns a (possibly propertized)
+  string to show
+- string with justification to use for the column contents
+  (left, right, center), default is left."
+  :type '(repeat (repeat (list string integer function
+                               (choice (const "left")
+                                       (const "right")
+                                       (const "center"))))))
 
 (defgroup filetree-symb-for nil
   "Symbols used for drawing tree in filetree package."
@@ -136,31 +164,6 @@ This can also be toggled using `filetree-toggle-info-buffer'."
 (defcustom filetree-symb-for-file-node "\u25cf"
   "Symbol for file node."
   :type 'character)
-
-(defcustom filetree-info-cycle-list
-  '(;; cycle 0 - no info
-    ()
-    ;; cycle 1 - modes/size/last mod
-    (("Modes" 11 filetree-get-file-modes "right")
-     ("Size" 7 filetree-get-file-size "right")
-     ("Last Mod" 12 filetree-get-file-last-modified "left"))
-    ;; cycle 2 - modes/size/last mod + VC
-    (("Modes" 11 filetree-get-file-modes "right")
-     ("Size" 7 filetree-get-file-size "right")
-     ("Last Mod" 12 filetree-get-file-last-modified "left")
-     ("VC State" 10 filetree-get-vc-state "left"))
-    ;; cycle 3 - vc
-    (("VC State" 10 filetree-get-vc-state "left")))
-  "List of file info contents to show on left side of filetree window.
-Each entry of this list is itself a list of the columns of information
-to show.  A nil entry corresponds to showing no info.  Each entry of this
-list has the following entries:
-- column heading (this can be propertized if desired)
-- width of the column
-- function that take a file as argument and returns a (possibly propertized)
-  string to show
-- string with justification to use for the column contents
-  (left, right, center), default is left.")
 
 (defvar filetree-info-buffer nil)
 (defvar filetree-info-buffer-state nil)
