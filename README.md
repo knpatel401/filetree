@@ -47,6 +47,18 @@ Within the *Filetree* window the following navigation commands can be used
 | filetree-prev-branch | TAB              | up one branch   |
 | --                   | RETURN (on file) | open file       |
 
+### View modes
+![filetree demo views](screenshots/filetree_demo_views.gif)
+
+| Command                           | key map | Comment                                    |
+|-----------------------------------|---------|--------------------------------------------|
+| filetree-set-max-depth            | 0-9     | set max depth of tree to view 0=max        |
+| filetree-cycle-max-depth          | <none>  | cycle through max depth                    |
+| filetree-toggle-combine-dir-names | /       | toggle combining dir/subdirs in dir name   |
+| filetree-toggle-use-all-icons     | ;       | toggle use-all-icons icons (if installed)  |
+|                                   | ]       | cycle right through info views on the left |
+|                                   | [       | cycle left through info views on the left  |
+
 ### Filtering and Expanding
 There are a number of ways to filter down the file list or to add files to the file list.  The results after each filtering or expansion operations is put on a stack and can be undone by popping off the stack using the "b" key.
 
@@ -58,12 +70,12 @@ There are a number of ways to filter down the file list or to add files to the f
 
 ![filetree demo filtering](screenshots/filetree_demo_filtering.gif)
 
-| Command                         | key map  | Comment                                     |
-|---------------------------------|----------|---------------------------------------------|
-| filetree-filter                 | f        | Regex based filter                          |
-| filetree-expand-dir             | e        | Add files in directory at point             |
-| filetree-expand-dir-recursively | E        | Add files in directory at point recursively |
-| --                              | <RETURN> | Return on subdir, narrows to that subdir    |
+| Command                         | key map | Comment                                     |
+|---------------------------------|---------|---------------------------------------------|
+| filetree-filter                 | f       | Regex based filter                          |
+| filetree-expand-dir             | e       | Add files in directory at point             |
+| filetree-expand-dir-recursively | E       | Add files in directory at point recursively |
+| --                              | RET     | Return on subdir, narrows to that subdir    |
 
 Notes:
 * The filetree-toggle-combined-dir-names command (see in View mode section below) can be helpful when wanted to use filetree-expand (or filetree-expand-dir-recursively) on a directory one or more levels above a file in the file list.
@@ -83,6 +95,8 @@ Notes:
 * The filetree-diff-with-file-list-stack command can be helpful for doing "complementary" filters, e.g., filtering for all files with test and then issuing the command will have the effect of removing all the files with test.
 
 #### Marking files and filtering based on marks
+![filetree demo marking files](screenshots/filetree_demo_mark.gif)
+
 | Command                             | key map | Comment                                                                     |
 |-------------------------------------|---------|-----------------------------------------------------------------------------|
 | filetree-mark-item                  | m       | toggle mark on file or add mark to all files in file-list in subdir         |
@@ -90,18 +104,6 @@ Notes:
 | filetree-select-marked-items        | M       | make file-list all marked files                                             |
 
 Marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one.
-
-### View modes
-![filetree demo views](screenshots/filetree_demo_views.gif)
-
-| Command                           | key map | Comment                                    |
-|-----------------------------------|---------|--------------------------------------------|
-| filetree-set-max-depth            | 0-9     | set max depth of tree to view 0=max        |
-| filetree-cycle-max-depth          | <none>  | cycle through max depth                    |
-| filetree-toggle-combine-dir-names | /       | toggle combining dir/subdirs in dir name   |
-| filetree-toggle-use-all-icons     | ;       | toggle use-all-icons icons (if installed)  |
-|                                   | ]       | cycle right through info views on the left |
-|                                   | [       | cycle left through info views on the left  |
 
 ### Operations
 | Command       | key map | Comment                                         |
