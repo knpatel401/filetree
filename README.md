@@ -157,29 +157,11 @@ Note enabling use-all-the-icons can make some of the operations sluggish if the 
 (setq all-the-icons-scale-factor 1)
 ```
 ### Additional file info configuration
-The information that can be cycled through and shown to the left of the filetree can be customized by using M-x customize on the variable filetree-info-cycle-list.  By writing your own functions (similar to functions like filetree-get-file-last-modified) and adding an entry with that function to filetree-info-cycle-list, you can show whatever information about a file you'd like on the left.
+The additional columns of information that can be shown on the left of the filetree are configurable.  Use M-x customize on the variable filetree-info-cycle-list for this configuration.  The screenshot below shows an example configuration.  
 
-The default value (shown below) corresponds to 6 view sets.  The first shows no additional information, the second shows the mode/size/last modification date for each file, the third shows size/last modification, and so on.
-```
-  '(;; cycle 0 - show no additional info
-    ()
-    ;; cycle 1 - modes/size/last mod
-    (("Modes" 11 filetree-get-file-modes "right")
-     ("Size" 7 filetree-get-file-size "right")
-     ("Last Mod" 12 filetree-get-file-last-modified "left"))
-    ;; cycle 2 - size/last mod
-    (("Size" 7 filetree-get-file-size "right")
-     ("Last Mod" 12 filetree-get-file-last-modified "left"))
-    ;; cycle 3 - last mod
-    (("Last Mod" 12 filetree-get-file-last-modified "left"))
-    ;; cycle 4 - last mod/modes
-    (("Last Mod" 12 filetree-get-file-last-modified "left")
-     ("Modes" 11 filetree-get-file-modes "right"))
-    ;; cycle 5 - last mod/modes/size
-    (("Last Mod" 12 filetree-get-file-last-modified "left")
-     ("Modes" 11 filetree-get-file-modes "right")
-     ("Size" 7 filetree-get-file-size "right")))
-```
+The sets of columns that are cycled through using "]" and "[" are called a view set.  Each view set has a set of columns and each column is specified by the column heading, the width of the column, the column justification (i.e., left/right/center), and a function that takes a filename/dirname as input and returns a string of information to display.  By writing your own functions (similar to functions like filetree-get-file-last-modified) and adding an entry with that function to filetree-info-cycle-list, you can show whatever information about a file you'd like on the left.
+
+![filetree-info-cycle-list config](screenshots/filetree-customize-additional-columns.png)
 
 ### Faces, marks, and misc
 The variable filetree-exclude-list is a list of regex for files to ignore.

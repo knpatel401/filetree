@@ -135,7 +135,8 @@ list has the following entries:
   string to show
 - string with justification to use for the column contents
   (left, right, center), default is left."
-  :type '(repeat (repeat (list :tag "View Set"
+  :type '(repeat (repeat :tag "View Set"
+                         (list :tag "Column"
                                (string :tag "Heading")
                                (integer :tag "Column Width")
                                function
