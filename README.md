@@ -7,7 +7,7 @@ The viewer displays a file list as a directory tree in a special buffer.  The fi
 * **File notes**
 The file notes enable the user to write and display (org-mode) notes associated with individual files and directories.  The note can be displayed in a side buffer either when cycling through files in the file tree viewer or when the file is open in a buffer.  The notes are kept either in a single org-mode file with a heading for each file/directory, and/or in local project specfic org-mode files.
 
-![filetree demo](filetree_demo.gif)
+![filetree demo](screenshots/filetree_demo.gif)
 
 ## Demo Video
 A video demoing some of the primary functionality is on [Youtube here](https://youtu.be/-KrMaLq8Bms).  The corresponding notes are in this repo [demo_notes.org](demo_notes.org).
@@ -24,7 +24,7 @@ Here are links to sections of the video that cover specific topics.
 
 ## File tree Viewer
 
-### Starting and Exit Viewer
+### Starting and Exit Viewer + Navigation & selection
 The following commands start the viewer with the corresponding file list
 | Command                           | Comment                                       |
 |-----------------------------------|-----------------------------------------------|
@@ -38,44 +38,67 @@ The following commands start the viewer with the corresponding file list
 | filetree-close-session            | exit viewer (tied to q in keymap)             |
 
 
-### Navigation
 Within the *Filetree* window the following navigation commands can be used
-| Command              | key map     | Comment         |
-|----------------------|-------------|-----------------|
-| filetree-next-line   | down, j     |                 | 
-| filetree-prev-line   | up, k       |                 | 
-| filetree-next-branch | SPC         |                 | 
-| filetree-prev-branch | TAB         |                 |
+| Command              | key map          | Comment         |
+|----------------------|------------------|-----------------|
+| filetree-next-line   | down, j          | down one line   |
+| filetree-prev-line   | up, k            | up one line     |
+| filetree-next-branch | SPC              | down one branch |
+| filetree-prev-branch | TAB              | up one branch   |
+| --                   | RETURN (on file) | open file       |
 
 ### Filtering and Expanding
+There are a number of ways to filter down the file list or to add files to the file list.  The results after each filtering or expansion operations is put on a stack and can be undone by popping off the stack using the "b" key.
+
 | Command                             | key map | Comment                                                                     |
 |-------------------------------------|---------|-----------------------------------------------------------------------------|
-| filetree-filter                     | f       | <ADD>                                                                       |
-| filetree-helm-filter                | s       | helm-based search                                                           |
-| filetree-expand-dir                 | e       | Add files in directory at point                                             |
-| filetree-expand-dir-recursively     | E       | Add files in directory at point recursively                                 |
-| filetree-reduce-list-by-10          | None    |                                                                             |
 | filetree-pop-file-list-stack        | b       | undo prev filter/expansion operation                                        |
+
+#### Regex-based filtering/expansion and narrowing to subdir
+
+![filetree demo filtering](screenshots/filetree_demo_filtering.gif)
+
+| Command                         | key map  | Comment                                     |
+|---------------------------------|----------|---------------------------------------------|
+| filetree-filter                 | f        | Regex based filter                          |
+| filetree-expand-dir             | e        | Add files in directory at point             |
+| filetree-expand-dir-recursively | E        | Add files in directory at point recursively |
+| --                              | <RETURN> | Return on subdir, narrows to that subdir    |
+
+Notes:
+* The filetree-toggle-combined-dir-names command (see in View mode section below) can be helpful when wanted to use filetree-expand (or filetree-expand-dir-recursively) on a directory one or more levels above a file in the file list.
+
+#### Helm-based filtering
+| Command                             | key map | Comment                                                                     |
+|-------------------------------------|---------|-----------------------------------------------------------------------------|
+| filetree-helm-filter                | s       | helm-based search                                                           |
+
+#### Stack operations
+| Command                             | key map | Comment                                                                     |
+|-------------------------------------|---------|-----------------------------------------------------------------------------|
 | filetree-diff-with-file-list-stack  | -       | remove files in current file-list from list on stack and make new file-list |
 | filetree-union-with-file-list-stack | +       | combine files in current file-list and list on stack into new file-list     |
+
+Notes:
+* The filetree-diff-with-file-list-stack command can be helpful for doing "complementary" filters, e.g., filtering for all files with test and then issuing the command will have the effect of removing all the files with test.
+
+#### Marking files and filtering based on marks
+| Command                             | key map | Comment                                                                     |
+|-------------------------------------|---------|-----------------------------------------------------------------------------|
 | filetree-mark-item                  | m       | toggle mark on file or add mark to all files in file-list in subdir         |
 | filetree-clear-marks                | c       | clear marks                                                                 |
 | filetree-select-marked-items        | M       | make file-list all marked files                                             |
 
-
-Notes:
-* The file list is added to a stack after each filtering operations (filetree-filter, filetree-helm-filter, filetree-reduce-list-by-10), and the filtering operation can be undone by popping off the stack (filetree-pop-file-list-stack).
-* Selecting (by pressing RETURN or clicking) on a file in the Filetree buffer opens the file.  Selecting on a directory narrows to the chosen subtree.
-* The filetree-toggle-combined-dir-names command (see in View mode section below) can be helpful when wanted to use filetree-expand (or filetree-expand-dir-recursively) on a directory one or more levels above a file in the file list.
-* The filetree-diff-with-file-list-stack command can be helpful for doing "complementary" filters, e.g., filtering for all files with test and then issuing the command will have the effect of removing all the files with test.
+Marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one.
 
 ### View modes
+![filetree demo views](screenshots/filetree_demo_views.gif)
+
 | Command                           | key map | Comment                                    |
 |-----------------------------------|---------|--------------------------------------------|
 | filetree-set-max-depth            | 0-9     | set max depth of tree to view 0=max        |
 | filetree-cycle-max-depth          | <none>  | cycle through max depth                    |
 | filetree-toggle-combine-dir-names | /       | toggle combining dir/subdirs in dir name   |
-| filetree-toggle-flat-vs-tree      | .       | toggle between tree and flat view          |
 | filetree-toggle-use-all-icons     | ;       | toggle use-all-icons icons (if installed)  |
 |                                   | ]       | cycle right through info views on the left |
 |                                   | [       | cycle left through info views on the left  |
@@ -134,9 +157,9 @@ Note enabling use-all-the-icons can make some of the operations sluggish if the 
 (setq all-the-icons-scale-factor 1)
 ```
 ### Additional file info configuration
-Users can configure the information that can be cycled through and shown to the left of the filetree by customizing filetree-info-cycle-list.  This is a list of lists, where each entry in the list is a view set (i.e., a set of columns to show), and each view set is a list  corresponding to each of the columns of info to be displayed;, for each column of info the user specifies the column heading, column width, a function that takes a file or dir name as input and returns a (possibly "propertized") string with the info to display, and a setting for the column justification that should be used.
+The information that can be cycled through and shown to the left of the filetree can be customized by using M-x customize on the variable filetree-info-cycle-list.  By writing your own functions (similar to functions like filetree-get-file-last-modified) and adding an entry with that function to filetree-info-cycle-list, you can show whatever information about a file you'd like on the left.
 
-The default value is 
+The default value (shown below) corresponds to 6 view sets.  The first shows no additional information, the second shows the mode/size/last modification date for each file, the third shows size/last modification, and so on.
 ```
   '(;; cycle 0 - show no additional info
     ()
@@ -157,7 +180,6 @@ The default value is
      ("Modes" 11 filetree-get-file-modes "right")
      ("Size" 7 filetree-get-file-size "right")))
 ```
-This corresponds to 6 view sets.  The first shows no additional information, the second shows the mode/size/last modification date for each file, the third shows size/last modification, and so on.
 
 ### Faces, marks, and misc
 The variable filetree-exclude-list is a list of regex for files to ignore.

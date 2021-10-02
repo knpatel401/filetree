@@ -441,7 +441,8 @@ If file-or-dir not specified, use file or dir at point."
           (setq filetree-marked-file-list (delete file-or-dir
                                                     filetree-marked-file-list))
           (add-to-list 'filetree-marked-file-list file-or-dir))))
-  (filetree-update-buffer t))
+  (filetree-update-buffer t)
+  (filetree-next-line))
 
 (defun filetree-get-name ()
   "Get name of file/dir on line at current point."
