@@ -58,6 +58,10 @@ Within the *Filetree* window the following navigation commands can be used
 | filetree-pop-file-list-stack        | b       | undo prev filter/expansion operation                                        |
 | filetree-diff-with-file-list-stack  | -       | remove files in current file-list from list on stack and make new file-list |
 | filetree-union-with-file-list-stack | +       | combine files in current file-list and list on stack into new file-list     |
+| filetree-mark-item                  | m       | toggle mark on file or add mark to all files in file-list in subdir         |
+| filetree-clear-marks                | c       | clear marks                                                                 |
+| filetree-select-marked-items        | M       | make file-list all marked files                                             |
+
 
 Notes:
 * The file list is added to a stack after each filtering operations (filetree-filter, filetree-helm-filter, filetree-reduce-list-by-10), and the filtering operation can be undone by popping off the stack (filetree-pop-file-list-stack).
