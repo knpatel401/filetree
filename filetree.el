@@ -124,7 +124,7 @@ This can also be toggled using `filetree-toggle-info-buffer'."
     ;; cycle 5 - last mod/modes/size
     (("Last Mod" 12 filetree-get-file-last-modified "left")
      ("Modes" 11 filetree-get-file-modes "right")
-     ("Size" 7 filetree-get-file-size "right")))    
+     ("Size" 7 filetree-get-file-size "right")))
   "List of file info contents to show on left side of filetree window.
 Each entry of this list is itself a list of the columns of information
 to show.  A nil entry corresponds to showing no info.  Each entry of this
@@ -135,7 +135,8 @@ list has the following entries:
   string to show
 - string with justification to use for the column contents
   (left, right, center), default is left."
-  :type '(repeat (repeat (list :tag "View Set"
+  :type '(repeat (repeat :tag "View Set"
+                         (list :tag "Column"
                                (string :tag "Heading")
                                (integer :tag "Column Width")
                                function
@@ -173,6 +174,11 @@ list has the following entries:
 (defcustom filetree-symb-for-file-node "\u25cf"
   "Symbol for file node."
   :type 'character)
+(defcustom filetree-symb-for-mark (propertize "\u25b6"
+                                              'font-lock-face
+                                              '(:foreground "DarkOliveGreen4"))
+  "Symbol for marking files."
+  :type 'character)
 
 (defvar filetree-info-buffer nil)
 (defvar filetree-info-buffer-state nil)
@@ -189,6 +195,7 @@ list has the following entries:
 (defvar filetree-current-file-list nil)
 (defvar filetree-file-list-stack nil)
 (defvar filetree-file-list-stack-save nil)
+(defvar filetree-marked-file-list nil)
 (defvar filetree-show-flat-list nil)
 (defvar filetree-combine-dir-names t)
 (defvar filetree-helm-source
@@ -247,6 +254,9 @@ This is populated using `filetree-add-filetype', for example see
     (define-key map "e" 'filetree-expand-dir)
     (define-key map "E" 'filetree-expand-dir-recursively)
     (define-key map "x" 'filetree-remove-item)
+    (define-key map "m" 'filetree-mark-item)
+    (define-key map "M" 'filetree-select-marked-items)
+    (define-key map "c" 'filetree-clear-marks)
     (define-key map "L" 'filetree-select-file-list)
     (define-key map "S" 'filetree-save-list)
     (define-key map "D" 'filetree-delete-list)
@@ -393,6 +403,47 @@ If file-or-dir not specified, use file or dir at point."
                                                     nil x))
                                               filetree-current-file-list)))))
   (filetree-update-buffer))
+
+(defun filetree-clear-marks ()
+  "Remove all files from `filetree-marked-file-list'."
+  (interactive)
+  (setq filetree-marked-file-list nil)
+  (filetree-update-buffer t))
+
+(defun filetree-select-marked-items ()
+  "Set `filetree-current-file-list' to files in `filetree-marked-file-list'."
+  (interactive)
+  (setq filetree-current-file-list filetree-marked-file-list)
+  (filetree-clear-marks)
+  (filetree-update-buffer))
+
+(defun filetree-mark-item (&optional file-or-dir)
+  "Add/remove FILE-OR-DIR to/from `filetree-marked-file-list'.
+If file-or-dir is a file then it's added to the list if not already on, and
+removed if already on.  If file-or-dir is a dir then all files in
+`filetree-current-file-list' within file-or-dir are added to
+`filetree-marked-file-list'.
+If file-or-dir not specified, use file or dir at point."
+  (interactive)
+  (let ((file-or-dir (or file-or-dir (filetree-get-name))))
+    (if (string= "/" (substring file-or-dir -1))
+        ;; add all files in directory to mark list
+        (let ((files (delete nil
+                             (mapcar (lambda (x)
+                                       (if (string-match
+                                            file-or-dir
+                                            x)
+                                           x nil))
+                                     filetree-current-file-list))))
+          (setq filetree-marked-file-list (-union files
+                                                  filetree-marked-file-list)))
+      ;; add file if not in mark list otherwise remove from mark list
+      (if (member file-or-dir filetree-marked-file-list)
+          (setq filetree-marked-file-list (delete file-or-dir
+                                                    filetree-marked-file-list))
+          (add-to-list 'filetree-marked-file-list file-or-dir))))
+  (filetree-update-buffer t)
+  (filetree-next-line))
 
 (defun filetree-get-name ()
   "Get name of file/dir on line at current point."
@@ -729,7 +780,8 @@ TODO: Break into smaller functions and clean-up."
         (cur-depth nil)
         (this-type nil)
         (this-name nil)
-        (this-entry nil))
+        (this-entry nil)
+        (draw-marks (> (length filetree-marked-file-list) 0)))
     (if (not my-depth-list)
         (setq my-depth-list (list (- (length my-dir-tree) 1)))
       (setcdr (last my-depth-list)
@@ -784,6 +836,7 @@ TODO: Break into smaller functions and clean-up."
                                                               "/"  this-name))
                             (setq dir-contents (nth 2 this-entry))))))
                 (insert (filetree-extra-file-info (nth 3 this-entry)))
+                (if draw-marks (insert " "))
                 (insert my-prefix)
                 (insert marks-to-print)
                 (if filetree-use-all-the-icons
@@ -818,6 +871,10 @@ TODO: Break into smaller functions and clean-up."
                                         filetree-symb-for-horizontal-pipe
                                         filetree-symb-for-file-node " ")))
               (insert (filetree-extra-file-info my-link))
+              (if draw-marks
+                  (if (member my-link filetree-marked-file-list)
+                      (insert filetree-symb-for-mark)
+                    (insert " ")))
               (insert my-prefix)
               (let ((button-face (filetree-file-face file-text)))
                 (if filetree-use-all-the-icons
@@ -888,10 +945,13 @@ TODO: Break into smaller functions and clean-up."
             "\t\t"
             (propertize "Stack size: " 'font-lock-face 'bold)
             (number-to-string (- (length filetree-file-list-stack) 1))
-            ;; "\t\t"
-            ;; (if filetree-show-flat-list
-            ;;     (propertize "Flat view" 'font-lock-face '(:foreground "blue"))
-            ;;   (propertize "Tree view" 'font-lock-face '(:foreground "DarkOliveGreen4")))
+            "\t\t"
+            (if (> (length filetree-marked-file-list) 0)
+                (concat
+                  (propertize "# Marked: " 'font-lock-face 'bold)
+                  (number-to-string (length filetree-marked-file-list))
+                  " ")
+              "")
             " \n")
     (setq header-length (point))
     (insert (make-string (apply '+ (mapcar (lambda (x)
