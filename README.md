@@ -29,6 +29,7 @@ The filetree package provides a set of interactive tools for finding and discove
 * **File discovery** - tools for finding new files from original file list
 * **Actions on files** - tools for acting on files in file list (e.g., grep)
 * **Notes** - support for file specific org-mode notes
+
 These tools can be used in a number of different ways.  Some possible use cases along with alternatives are discussed below.
 
 ## Recent files use case
@@ -120,6 +121,8 @@ Notes:
 * The filetree-toggle-combined-dir-names command (see in View mode section below) can be helpful when wanted to use filetree-expand (or filetree-expand-dir-recursively) on a directory one or more levels above a file in the file list.
 
 ### Helm-based filtering
+![filetree demo views](screenshots/filetree_demo_helm_search.gif)
+
 | Command                             | key map | Comment                                                                     |
 |-------------------------------------|---------|-----------------------------------------------------------------------------|
 | filetree-helm-filter                | s       | helm-based search                                                           |
@@ -145,10 +148,12 @@ Notes:
 Marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one.
 
 ## Operations
-| Command       | key map | Comment                                         |
-|---------------|---------|-------------------------------------------------|
-| filetree-grep | g       | grep over files in current list                 |
-| dired         | d       | opens a dired session at the directory at point |
+| Command                      | key map | Comment                                         |
+|------------------------------|---------|-------------------------------------------------|
+| filetree-grep                | g       | grep over files in current list                 |
+| dired                        | d       | opens a dired session at the directory at point |
+| filetree-kill-marked-buffers | K       | kill all buffers associated with marked files   |
+| filetree-delete-marked-files | <None>  | delete all marked files                         |
 
 ## Save/Retrieve file list
 File lists can be saved/retrieved from the file specified by filetree-saved-lists-file.  The filetree-select-file-list function uses a helm interface for selection of the file list.

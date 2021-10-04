@@ -254,6 +254,7 @@ This is populated using `filetree-add-filetype', for example see
     (define-key map "e" 'filetree-expand-dir)
     (define-key map "E" 'filetree-expand-dir-recursively)
     (define-key map "x" 'filetree-remove-item)
+    (define-key map "K" 'filetree-kill-marked-buffers)
     (define-key map "m" 'filetree-mark-item)
     (define-key map "M" 'filetree-select-marked-items)
     (define-key map "c" 'filetree-clear-marks)
@@ -415,6 +416,34 @@ If file-or-dir not specified, use file or dir at point."
   (interactive)
   (setq filetree-current-file-list filetree-marked-file-list)
   (filetree-clear-marks)
+  (filetree-update-buffer))
+
+(defun filetree-kill-marked-buffers ()
+  "Kill buffers associated with files in `filetree-marked-file-list'."
+  (interactive)
+  (let ((my-buffer-list (buffer-list)))
+    (while my-buffer-list
+      (setq my-buffer (car my-buffer-list))
+      (setq my-buffer-list (cdr my-buffer-list))
+      (if (member (buffer-file-name my-buffer)
+                  filetree-marked-file-list)
+          (kill-buffer my-buffer)))
+    (setq filetree-current-file-list (-difference filetree-current-file-list filetree-marked-file-list))
+    (setq filetree-marked-file-list nil)
+  (filetree-update-buffer)))
+
+(defun filetree-delete-marked-files ()
+  "Delete files in `filetree-marked-file-list'."
+  (interactive)
+  (if (y-or-n-p (concat "Are you sure you want to delete "
+                        (number-to-string (length filetree-marked-file-list))
+                        " files?"))
+      (while filetree-marked-file-list
+        (setq my-file (car filetree-marked-file-list))
+        (setq filetree-marked-file-list (cdr filetree-marked-file-list))
+        (delete-file my-file)
+        (setq filetree-current-file-list (delete my-file
+                                                 filetree-current-file-list))))
   (filetree-update-buffer))
 
 (defun filetree-mark-item (&optional file-or-dir)
