@@ -139,12 +139,13 @@ Notes:
 ### Marking files and filtering based on marks
 ![filetree demo marking files](screenshots/filetree_demo_mark.gif)
 
-| Command                             | key map | Comment                                                                     |
-|-------------------------------------|---------|-----------------------------------------------------------------------------|
-| filetree-mark-item                  | m       | toggle mark on file or add mark to all files in file-list in subdir         |
-| filetree-clear-marks                | c       | clear marks                                                                 |
-| filetree-select-marked-items        | M       | make file-list all marked files                                             |
-
+| Command                      | key map | Comment                                                             |
+|------------------------------|---------|---------------------------------------------------------------------|
+| filetree-mark-item           | m       | toggle mark on file or add mark to all files in file-list in subdir |
+| filetree-mark-all            | A       | mark all items in current filetree                                  |
+| filetree-clear-marks         | c       | clear marks                                                         |
+| filetree-select-marked-items | M       | make file-list all marked files                                     |
+    
 Marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one.
 
 ## Operations
@@ -154,6 +155,9 @@ Marks on files are not affected by the filtering operations, so you can use the 
 | dired                        | d       | opens a dired session at the directory at point |
 | filetree-kill-marked-buffers | K       | kill all buffers associated with marked files   |
 | filetree-delete-marked-files | <None>  | delete all marked files                         |
+| filetree-open-marked-files   | o       | Open buffer for all marked files                |
+
+
 
 ## Save/Retrieve file list
 File lists can be saved/retrieved from the file specified by filetree-saved-lists-file.  The filetree-select-file-list function uses a helm interface for selection of the file list.

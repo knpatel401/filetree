@@ -254,8 +254,10 @@ This is populated using `filetree-add-filetype', for example see
     (define-key map "e" 'filetree-expand-dir)
     (define-key map "E" 'filetree-expand-dir-recursively)
     (define-key map "x" 'filetree-remove-item)
+    (define-key map "o" 'filetree-open-marked-files)
     (define-key map "K" 'filetree-kill-marked-buffers)
     (define-key map "m" 'filetree-mark-item)
+    (define-key map "A" 'filetree-mark-all)
     (define-key map "M" 'filetree-select-marked-items)
     (define-key map "c" 'filetree-clear-marks)
     (define-key map "L" 'filetree-select-file-list)
@@ -421,7 +423,8 @@ If file-or-dir not specified, use file or dir at point."
 (defun filetree-kill-marked-buffers ()
   "Kill buffers associated with files in `filetree-marked-file-list'."
   (interactive)
-  (let ((my-buffer-list (buffer-list)))
+  (let ((my-buffer-list (buffer-list))
+        (my-buffer nil))
     (while my-buffer-list
       (setq my-buffer (car my-buffer-list))
       (setq my-buffer-list (cdr my-buffer-list))
@@ -431,6 +434,19 @@ If file-or-dir not specified, use file or dir at point."
     (setq filetree-current-file-list (-difference filetree-current-file-list filetree-marked-file-list))
     (setq filetree-marked-file-list nil)
   (filetree-update-buffer)))
+
+(defun filetree-open-marked-files ()
+  "Open buffer for each file in `filetree-marked-file-list'.
+If buffer already exists, new buffer is not opened."
+  (interactive)
+  (let ((this-file ""))
+    (while filetree-marked-file-list
+      (setq this-file (car filetree-marked-file-list))
+      (setq filetree-marked-file-list (cdr filetree-marked-file-list))
+      (if (file-exists-p this-file)
+          (find-file-noselect this-file)
+        (message (concat this-file " not found.")))))
+  (filetree-update-buffer t))
 
 (defun filetree-delete-marked-files ()
   "Delete files in `filetree-marked-file-list'."
@@ -465,14 +481,24 @@ If file-or-dir not specified, use file or dir at point."
                                            x nil))
                                      filetree-current-file-list))))
           (setq filetree-marked-file-list (-union files
-                                                  filetree-marked-file-list)))
+                                                  filetree-marked-file-list))
+          (filetree-update-buffer t)
+          (filetree-next-branch))
       ;; add file if not in mark list otherwise remove from mark list
-      (if (member file-or-dir filetree-marked-file-list)
-          (setq filetree-marked-file-list (delete file-or-dir
+      (progn
+        (if (member file-or-dir filetree-marked-file-list)
+            (setq filetree-marked-file-list (delete file-or-dir
                                                     filetree-marked-file-list))
-          (add-to-list 'filetree-marked-file-list file-or-dir))))
-  (filetree-update-buffer t)
-  (filetree-next-line))
+          (add-to-list 'filetree-marked-file-list file-or-dir))
+        (filetree-update-buffer t)
+        (filetree-next-line)))))
+
+(defun filetree-mark-all ()
+  "Add all files in `filetree-current-file-list' to marked files"
+  (interactive)
+  (setq filetree-marked-file-list (-union filetree-current-file-list
+                                          filetree-marked-file-list))
+  (filetree-update-buffer t))
 
 (defun filetree-get-name ()
   "Get name of file/dir on line at current point."
