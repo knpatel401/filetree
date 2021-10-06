@@ -99,6 +99,9 @@ This can also be toggled using `filetree-toggle-use-all-icons'."
   "Set to t to show info in side window.
 This can also be toggled using `filetree-toggle-info-buffer'."
   :type 'boolean)
+(defcustom filetree-show-remote-file-info nil
+  "Set to t to show additional file info for remote files as well."
+  :type 'boolean)
 (defcustom filetree-exclude-list
   '("~$" "#$" ".git\/" ".gitignore$" "\/\.\/$" "\/\.\.\/$" ".DS_Store$")
   "List of regex for files to exclude from file list."
@@ -249,7 +252,7 @@ This is populated using `filetree-add-filetype', for example see
     (define-key map "b" 'filetree-pop-file-list-stack)
     (define-key map "-" 'filetree-diff-with-file-list-stack)
     (define-key map "+" 'filetree-union-with-file-list-stack)
-    (define-key map "g" 'filetree-grep)
+    (define-key map "g" 'filetree-grep-marked-files)
     (define-key map "d" 'filetree-run-dired)
     (define-key map "e" 'filetree-expand-dir)
     (define-key map "E" 'filetree-expand-dir-recursively)
@@ -332,30 +335,39 @@ custom function with calls to `filetree-add-filetype'"
 
 (defun filetree-get-file-size (filename)
   "Return a string with the size of FILENAME."
-  (let ((attributes (file-attributes filename)))
-    (if attributes
-        (format "%s"
-                (file-size-human-readable
-                 (file-attribute-size attributes)))
-      "N/A")))
+  (if (or filetree-show-remote-file-info
+          (not (file-remote-p filename)))
+      (let ((attributes (file-attributes filename)))
+        (if attributes
+            (format "%s"
+                    (file-size-human-readable
+                     (file-attribute-size attributes)))
+          "N/A"))
+    "remote"))
 
 (defun filetree-get-file-modes (filename)
   "Return a string with the file modes of FILENAME."
-  (let ((attributes (file-attributes filename)))
-    (if attributes
-        (let ((modes (file-attribute-modes attributes)))
-          (if (string-prefix-p "d" modes)
-              (propertize modes 'font-lock-face 'bold)
-            modes))
-      "N/A    ")))
+  (if (or filetree-show-remote-file-info
+          (not (file-remote-p filename)))
+      (let ((attributes (file-attributes filename)))
+        (if attributes
+            (let ((modes (file-attribute-modes attributes)))
+              (if (string-prefix-p "d" modes)
+                  (propertize modes 'font-lock-face 'bold)
+                modes))
+          "N/A    "))
+    "remote  "))
 
 (defun filetree-get-file-last-modified (filename)
   "Return a string with the last modification time for FILENAME."
-  (let ((attributes (file-attributes filename)))
-    (if attributes
-        (format-time-string "%b %d %Y"
-                            (file-attribute-modification-time attributes))
-      "N/A")))
+  (if (or filetree-show-remote-file-info
+          (not (file-remote-p filename)))
+      (let ((attributes (file-attributes filename)))
+        (if attributes
+            (format-time-string "%b %d %Y"
+                                (file-attribute-modification-time attributes))
+          "    N/A"))
+    "   remote"))
 
 (defun filetree-filter ()
   "Interactive function to filter 'filetree-current-file-list'.
@@ -421,8 +433,12 @@ If file-or-dir not specified, use file or dir at point."
   (filetree-update-buffer))
 
 (defun filetree-kill-marked-buffers ()
-  "Kill buffers associated with files in `filetree-marked-file-list'."
+  "Kill buffers associated with files in `filetree-marked-file-list'.
+If `filetree-marked-file-list' is empty, then use `filetree-current-file-list'."
   (interactive)
+  ; if no marked files treat all files as marked
+  (if (= (length filetree-marked-file-list) 0)
+      (setq filetree-marked-file-list filetree-current-file-list))
   (let ((my-buffer-list (buffer-list))
         (my-buffer nil))
     (while my-buffer-list
@@ -437,8 +453,12 @@ If file-or-dir not specified, use file or dir at point."
 
 (defun filetree-open-marked-files ()
   "Open buffer for each file in `filetree-marked-file-list'.
-If buffer already exists, new buffer is not opened."
+If buffer already exists, new buffer is not opened.  If 
+`filetree-marked-file-list' is empty use `filetree-current-file-list'"
   (interactive)
+  ; if no marked files treat all files as marked
+  (if (= (length filetree-marked-file-list) 0)
+      (setq filetree-marked-file-list filetree-current-file-list))
   (let ((this-file ""))
     (while filetree-marked-file-list
       (setq this-file (car filetree-marked-file-list))
@@ -448,8 +468,9 @@ If buffer already exists, new buffer is not opened."
         (message (concat this-file " not found.")))))
   (filetree-update-buffer t))
 
-(defun filetree-delete-marked-files ()
-  "Delete files in `filetree-marked-file-list'."
+(defun filetree-delete-marked-files-only ()
+  "Delete files in `filetree-marked-file-list'.
+Confirms with user before deleting."
   (interactive)
   (if (y-or-n-p (concat "Are you sure you want to delete "
                         (number-to-string (length filetree-marked-file-list))
@@ -461,6 +482,30 @@ If buffer already exists, new buffer is not opened."
         (setq filetree-current-file-list (delete my-file
                                                  filetree-current-file-list))))
   (filetree-update-buffer))
+
+(defun filetree-move-marked-files-only ()
+  "Move files in `filetree-marked-file-list'.
+User is prompted with directory to move files to.  The starting dir that is 
+shown to the user at the prompt is determined from the directory at point 
+in the filetree.  The move is confirmed with the user before moving."
+  (interactive)
+  (if (y-or-n-p (concat "Are you sure you want to move "
+                        (number-to-string (length filetree-marked-file-list))
+                        " files?"))
+      (let ((dest-dir (read-directory-name
+                       "Directory to mv files to: "
+                       (file-name-directory (filetree-get-name))))
+            (new-file nil)
+            (orig-file nil))
+        (while filetree-marked-file-list
+          (setq orig-file (car filetree-marked-file-list))
+          (setq filetree-marked-file-list (cdr filetree-marked-file-list))
+          (setq new-file (concat dest-dir (file-name-nondirectory orig-file)))
+          (rename-file orig-file new-file)
+          (setq filetree-current-file-list (delete orig-file
+                                                   filetree-current-file-list))
+          (add-to-list 'filetree-current-file-list new-file))
+        (filetree-update-buffer))))
 
 (defun filetree-mark-item (&optional file-or-dir)
   "Add/remove FILE-OR-DIR to/from `filetree-marked-file-list'.
@@ -1273,18 +1318,22 @@ Info determined from 'filetree-filetype-list' and 'filetree-default-file-face'."
       (setq my-file-face-list (cdr my-file-face-list)))
     file-face))
 
-(defun filetree-grep ()
-  "Run grep on files in 'filetree-current-file-list'.
-Takes input from user for grep pattern."
+(defun filetree-grep-marked-files ()
+  "Run grep on files in `filetree-marked-file-list'.
+Takes input from user for grep pattern. If `filetree-marked-file-list'
+is empty use `filetree-current-file-list'"
   (interactive)
   (if (version< emacs-version "27.1")
-      (message "filetree-grep not supported for emacs versions before 27.1")
+      (message "filetree-grep-marked-files not supported for emacs versions before 27.1")
     (let* ((my-filetree-regex (read-string "Type search string: "))
            (xrefs nil)
+           (file-list (if (> (length filetree-marked-file-list) 0)
+                          filetree-marked-file-list
+                        filetree-current-file-list))
            (fetcher
             (lambda ()
               (setq xrefs (xref-matches-in-files my-filetree-regex
-                                                 (-filter 'file-exists-p filetree-current-file-list)))
+                                                 (-filter 'file-exists-p file-list)))
               (unless xrefs
                 (user-error "No matches for: %s" my-filetree-regex))
               xrefs)))

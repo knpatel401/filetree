@@ -149,15 +149,15 @@ Notes:
 Marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one.
 
 ## Operations
-| Command                      | key map | Comment                                         |
-|------------------------------|---------|-------------------------------------------------|
-| filetree-grep                | g       | grep over files in current list                 |
-| dired                        | d       | opens a dired session at the directory at point |
-| filetree-kill-marked-buffers | K       | kill all buffers associated with marked files   |
-| filetree-delete-marked-files | <None>  | delete all marked files                         |
-| filetree-open-marked-files   | o       | Open buffer for all marked files                |
+| Command                           | key map | Comment                                         |
+|-----------------------------------|---------|-------------------------------------------------|
+| filetree-grep-marked-files        | g       | grep over marked files                          |
+| filetree-kill-marked-buffers      | K       | kill all buffers associated with marked files   |
+| filetree-open-marked-files        | o       | Open buffer for all marked files                |
+| filetree-delete-marked-files-only | <None>  | delete all marked files                         |
+| dired                             | d       | opens a dired session at the directory at point |
 
-
+For filetree-grep-marked-files, filetree-kill-marked-buffers and filetree-open-marked-files, if no files are marked, the commands act on all files in the current file tree.
 
 ## Save/Retrieve file list
 File lists can be saved/retrieved from the file specified by filetree-saved-lists-file.  The filetree-select-file-list function uses a helm interface for selection of the file list.
@@ -199,15 +199,18 @@ One thing to keep in mind is that the note is referenced by it's absolute file n
 | filetree-saved-lists-file        | ~/.emacs.d/filetree-saved-lists.el | File used for saved file lists                 |
 
 ## Settings related to startup state
-| Parameter                  | default  | Comment                                          |
-|----------------------------|----------|--------------------------------------------------|
-| filetree-info-window       | nil      | Set to t to show notes/info side window at start |
-| filetree-use-all-the-icons | nil      | Set to t to show icons for files/dirs            |
+| Parameter                      | default | Comment                                                                       |
+|--------------------------------|---------|-------------------------------------------------------------------------------|
+| filetree-info-window           | nil     | Set to t to show notes/info side window at start                              |
+| filetree-use-all-the-icons     | nil     | Set to t to show icons for files/dirs                                         |
+| filetree-show-remote-file-info | nil     | Set to t to show additional file info for remote files as well as local files |
 
 Note enabling use-all-the-icons can make some of the operations sluggish if the file list is large.  Also, you may need to set the scaling for the icons to match the height of the text:
 ```
 (setq all-the-icons-scale-factor 1)
 ```
+The variable filetree-show-remote-file-info is set to nil by default because determining file info (e.g., file size, mode, etc.) can be slow for remote file systems.
+
 ## Additional file info configuration
 The additional columns of information that can be shown on the left of the filetree are configurable.  Use M-x customize on the variable filetree-info-cycle-list for this configuration.  The screenshot below shows an example configuration.  
 
