@@ -90,14 +90,14 @@ Within the *Filetree* window the following navigation commands can be used
 ## View modes
 ![filetree demo views](screenshots/filetree_demo_views.gif)
 
-| Command                           | key map | Comment                                    |
-|-----------------------------------|---------|--------------------------------------------|
-| filetree-set-max-depth            | 0-9     | set max depth of tree to view 0=max        |
-| filetree-cycle-max-depth          | <none>  | cycle through max depth                    |
-| filetree-toggle-combine-dir-names | /       | toggle combining dir/subdirs in dir name   |
-| filetree-toggle-use-all-icons     | ;       | toggle use-all-icons icons (if installed)  |
-|                                   | ]       | cycle right through info views on the left |
-|                                   | [       | cycle left through info views on the left  |
+| Command                               | key map | Comment                                    |
+|---------------------------------------|---------|--------------------------------------------|
+| filetree-set-max-depth                | 0-9     | set max depth of tree to view 0=max        |
+| filetree-cycle-max-depth              | <none>  | cycle through max depth                    |
+| filetree-toggle-combine-dir-names     | /       | toggle combining dir/subdirs in dir name   |
+| filetree-toggle-use-all-icons         | ;       | toggle use-all-icons icons (if installed)  |
+| filetree-increment-current-info-cycle | ]       | cycle right through info views on the left |
+| filetree-decrement-current-info-cycle | [       | cycle left through info views on the left  |
 
 ## Filtering and Expanding
 There are a number of ways to filter down the file list or to add files to the file list.  The results after each filtering or expansion operations is put on a stack and can be undone by popping off the stack using the "b" key.
