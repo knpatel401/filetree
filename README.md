@@ -149,13 +149,16 @@ Notes:
 Marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one.
 
 ## Operations
-| Command                           | key map | Comment                                         |
-|-----------------------------------|---------|-------------------------------------------------|
-| filetree-grep-marked-files        | g       | grep over marked files                          |
-| filetree-kill-marked-buffers      | K       | kill all buffers associated with marked files   |
-| filetree-open-marked-files        | o       | Open buffer for all marked files                |
-| filetree-delete-marked-files-only | <None>  | delete all marked files                         |
-| dired                             | d       | opens a dired session at the directory at point |
+| Command                                        | key map | Comment                                         |
+|------------------------------------------------|---------|-------------------------------------------------|
+| filetree-grep-marked-files                     | g       | grep over marked files                          |
+| filetree-kill-marked-buffers                   | K       | kill all buffers associated with marked files   |
+| filetree-open-marked-files                     | o       | Open buffer for all marked files                |
+| filetree-copy-marked-files-only                | C       | copy all marked files to directory from user    |
+| filetree-move-marked-files-only                | R       | move all marked files to directory from user    |
+| filetree-do-shell-command-on-marked-files-only | !       | run shell command on marked files               |
+| filetree-delete-marked-files-only              | <None>  | delete all marked files                         |
+| dired                                          | d       | opens a dired session at the directory at point |
 
 For filetree-grep-marked-files, filetree-kill-marked-buffers and filetree-open-marked-files, if no files are marked, the commands act on all files in the current file tree.
 
