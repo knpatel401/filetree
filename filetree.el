@@ -103,6 +103,9 @@ This can also be toggled using `filetree-toggle-info-buffer'."
 (defcustom filetree-show-remote-file-info nil
   "Set to t to show additional file info for remote files as well."
   :type 'boolean)
+(defcustom filetree-enable-nonexistent-file-removal t
+  "Set to t to check for and remove non-existent files during filetree updates."
+  :type 'boolean)
 (defcustom filetree-exclude-list
   '("~$" "#$" ".git\/" ".gitignore$" "\/\.\/$" "\/\.\.\/$" ".DS_Store$")
   "List of regex for files to exclude from file list."
@@ -478,6 +481,15 @@ Confirms with user before deleting."
   (filetree-update-buffer))
 
 
+(defun filetree-do-shell-command-on-marked-files-only ()
+  "Use dired-aux functions to run shell command on marked files.
+Output appears in *Shell Command Output*"
+  (interactive)
+  (dired-do-shell-command (dired-read-shell-command
+                           "! on %s: " current-prefix-arg
+                           filetree-marked-file-list)
+                          nil filetree-marked-file-list))
+
 (defun filetree-move-marked-files-only ()
   "Move files in `filetree-marked-file-list'.
 User is prompted with directory to move files to.  The starting dir that is 
@@ -496,20 +508,11 @@ in the filetree."
           (setq orig-file (car filetree-marked-file-list))
           (setq filetree-marked-file-list (cdr filetree-marked-file-list))
           (setq new-file (concat dest-dir (file-name-nondirectory orig-file)))
-          (rename-file orig-file new-file)
+          (rename-file orig-file new-file 1)
           (setq filetree-current-file-list (delete orig-file
                                                    filetree-current-file-list))
           (add-to-list 'filetree-current-file-list new-file))
         (filetree-update-buffer))))
-
-(defun filetree-do-shell-command-on-marked-files-only ()
-  "Use dired-aux functions to run shell command on marked files.
-Output appears in *Shell Command Output*"
-  (interactive)
-  (dired-do-shell-command (dired-read-shell-command
-                           "! on %s: " current-prefix-arg
-                           filetree-marked-file-list)
-                          nil filetree-marked-file-list))
 
 (defun filetree-copy-marked-files-only ()
   "Copy files in `filetree-marked-file-list'.
@@ -529,10 +532,10 @@ in the filetree."
           (setq orig-file (car filetree-marked-file-list))
           (setq filetree-marked-file-list (cdr filetree-marked-file-list))
           (setq new-file (concat dest-dir (file-name-nondirectory orig-file)))
-          (copy-file orig-file new-file)
-          (setq filetree-current-file-list (delete orig-file
-                                                   filetree-current-file-list))
-          (add-to-list 'filetree-current-file-list new-file))
+          (if (not (string= orig-file new-file))
+              (progn
+                (copy-file orig-file new-file 1)
+                (add-to-list 'filetree-current-file-list new-file))))
         (filetree-update-buffer))))
 
 (defun filetree-mark-item (&optional file-or-dir)
@@ -1276,11 +1279,26 @@ This is used when first starting an info note file."
                               "\u2518\n")
                       'font-lock-face '(:foreground "red"))))
 
+(defun filetree-remove-nonexistent-files ()
+  "Remove non-existent files from `filetree-current-file-list'.
+If `filetree-show-remote-file-info' is nil, then don't check file existence
+for remote files."
+  (setq filetree-current-file-list
+        (delete nil (mapcar (lambda (x)
+                              (if (or (and (not filetree-show-remote-file-info)
+                                           (file-remote-p x))
+                                      (file-exists-p x))
+                                  x nil))
+                            filetree-current-file-list
+                            ))))
+  
 (defun filetree-update-buffer (&optional skip-update-stack)
   "Update the display buffer (following some change).
 This function should be called after any change to 'filetree-current-file-list'.
 If SKIP-UPDATE-STACK is t, `filetree-file-list-stack' is not updated."
   (interactive)
+  (if filetree-enable-nonexistent-file-removal
+      (filetree-remove-nonexistent-files))
   (let ((text-scale-previous (buffer-local-value 'text-scale-mode-amount
                                                  (current-buffer))))
     (save-current-buffer

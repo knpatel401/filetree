@@ -2,7 +2,7 @@
 Filetree is a package that provides two basic functions:
 
 * **File tree viewer**
-The viewer displays a file list as a directory tree in a special buffer.  The file list can be populated from any list of files.  There are functions to populate from a number of common sources: recentf, files in buffer-list, files in the current directory, and files found recursively in the current directory.  Within the viewer, the file list can be filtered and expanded in various ways and operations can be performed on the filtered file list (e.g., grep over files in list, open file, etc.).  Multiple file lists can be saved and retrieved between sessions.
+The viewer displays a file list as a directory tree in a special buffer.  The file list can be populated from any list of files.  There are functions to populate from a number of common sources: recentf, files in buffer-list, files in the current directory, and files found recursively in the current directory.  Within the viewer, the file list can be filtered, marked, and expanded in various ways and operations can be performed on the filtered file list (e.g., grep over files in list, open files in buffers, move files, copy files, run script on files, etc.).  Multiple file lists can be saved and retrieved between sessions.
 
 * **File notes**
 The file notes enable the user to write and display (org-mode) notes associated with individual files and directories.  The note can be displayed in a side buffer either when cycling through files in the file tree viewer or when the file is open in a buffer.  The notes are kept either in a single org-mode file with a heading for each file/directory, and/or in local project specfic org-mode files.
@@ -56,6 +56,11 @@ The project/file explorer use case for filetree is different, and comes from a c
 * Secondly, there's an emphasis on interactive tools for project/file exploration--there are a lot of interactive tools available in filetree to navigate, filter, and discover files.
 
 In a typical filetree use case, the filetree is pulled up for an action (e.g., finding a file, searching for something in the files in a project, visualizing the directory structure), the interactive tools are used to find the desired information or file and then filetree is closed.  This is different from how a conventional project/file explorer is typically used.
+
+## Dired use case
+The filetree package can do some basic file system operations that are akin to operations available in dired.  In particular, the user can filter, expand, and mark files--and then perform operations like delete files, copy/move files, run script on files, grep across the marked files, etc..  Dired can run a more extensive set of file system operations, and so filetree is not a replacement for dired.  However, an advantage of filetree is that it makes it easier to find, visualize, and mark files across different parts of the file system.  So if the desired operations are basic (i.e., copy/move/delete/grep/run script on), then filetree can be a good alternative.
+
+BTW if there's an operation that you would like to have in filetree, please file an issue and I'll try to add it.
 
 ## File notes use case 
 The file notes functionatity in filetree can be used as a light weight file-specific (org-mode) note taking tool.  With the integration with the rest of the filetree package, those notes can also be displayed while navigating the filetree.  What makes filetree's note functionality useful is that it's simple and there's very little overhead--a note for any file can be visited (or automatically created) with a single key binding, and the notes are centralized in a single global org file (or project specific org files if desired).
@@ -149,6 +154,8 @@ Notes:
 Marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one.
 
 ## Operations
+![filetree demo file operations](screenshots/filetree_demo_file_ops.gif)
+
 | Command                                        | key map | Comment                                         |
 |------------------------------------------------|---------|-------------------------------------------------|
 | filetree-grep-marked-files                     | g       | grep over marked files                          |
