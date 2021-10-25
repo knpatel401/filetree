@@ -658,7 +658,7 @@ expression to filter with."
       (setq my-filetree-mode-filter-list (cdr my-filetree-mode-filter-list)))
     (if (not my-filetree-regex)
         (setq my-filetree-regex (read-string "Type a string: ")))
-    (setq filetree-new-files (directory-files-recursively dir my-filetree-regex))
+    (setq filetree-new-files (directory-files-recursively dir my-filetree-regex nil t))
     (dolist (entry filetree-exclude-list)
       (setq filetree-new-files (delete nil (mapcar (lambda (x)
                                                     (if (string-match entry x)
