@@ -672,6 +672,7 @@ expression to filter with."
 
 (defun filetree-run-dired ()
   "Run dired on directory at point."
+  (interactive)
   (dired (filetree-get-name)))
 
 (defun filetree-reduce-list-by-10 ()
