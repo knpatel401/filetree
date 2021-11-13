@@ -1527,9 +1527,6 @@ If current buffer not dired buffer, return nil."
           result))
     nil))
              
-  (print (equal major-mode 'dired-mode))
-  (print dired-directory))
-
 (defun filetree-show-cur-dir ()
   "Load files in current directory into current file list and show in tree mode."
   (interactive)
