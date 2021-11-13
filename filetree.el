@@ -291,7 +291,18 @@ This is populated using `filetree-add-filetype', for example see
 (defun filetree-close-session ()
   "Close filetree session."
   (interactive)
+  (filetree-buffer-check)
   (kill-buffer (current-buffer)))
+
+(defun filetree-buffer-check ()
+  "Check if buffer is `filetree-buffer-name'.
+If not, then give error message and throw exception."
+  (interactive)
+  (if (not (equal (buffer-name)
+                  filetree-buffer-name))
+      (error (concat "Error: Must be in buffer "
+                     filetree-buffer-name
+                     " to run command."))))
 
 (defun filetree-add-filetype (name shortcut regex face)
   "Add a filetype to `filetree-filetype-list' for special handling.
@@ -581,6 +592,7 @@ If file-or-dir not specified, use file or dir at point."
 (defun filetree-get-name ()
   "Get name of file/dir on line at current point."
   (interactive)
+  (filetree-buffer-check)
   (if (button-at (point))
       (button-get (button-at (point)) 'name)
     nil))
@@ -761,6 +773,7 @@ If maxdepth not specified, show full tree."
 (defun filetree-goto-node ()
   "Move point to item on current line."
   (interactive)
+  (filetree-buffer-check)
   (if (< (point) filetree-start-position)
       (progn
         (goto-char (point-min))
@@ -1506,16 +1519,24 @@ is empty use `filetree-current-file-list'"
 (defun filetree-show-cur-dir ()
   "Load files in current directory into current file list and show in tree mode."
   (interactive)
-  (setq filetree-current-file-list nil)
-  (setq filetree-file-list-stack (list filetree-current-file-list))
-  (filetree-expand-dir (file-name-directory (buffer-file-name)) 0))
+  (let ((cur-buffer-file (buffer-file-name)))
+    (if cur-buffer-file
+        (progn
+          (setq filetree-current-file-list nil)
+          (setq filetree-file-list-stack (list filetree-current-file-list))
+          (filetree-expand-dir (file-name-directory (buffer-file-name)) 0))
+      (error "Current buffer must correspond to a file to run filetree-show-cur-dir"))))
 
 (defun filetree-show-cur-dir-recursively ()
   "Load files in current directory (recursively) into current file list and show in tree mode."
   (interactive)
-  (setq filetree-current-file-list nil)
-  (setq filetree-file-list-stack (list filetree-current-file-list))
-  (filetree-expand-dir-recursively (file-name-directory (buffer-file-name)) 0))
+  (let ((cur-buffer-file (buffer-file-name)))
+    (if cur-buffer-file
+        (progn
+          (setq filetree-current-file-list nil)
+          (setq filetree-file-list-stack (list filetree-current-file-list))
+          (filetree-expand-dir-recursively (file-name-directory (buffer-file-name)) 0))
+      (error "Current buffer must correspond to a file to run filetree-show-cur-dir-recursively"))))
 
 (defun filetree-show-cur-buffers ()
   "Load file buffers in buffer list into current file list and show in tree mode."
