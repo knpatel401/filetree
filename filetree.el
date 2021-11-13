@@ -1516,27 +1516,47 @@ is empty use `filetree-current-file-list'"
       (recentf-mode))
   (filetree-show-files recentf-list))
 
+(defun filetree-get-dired-dir ()
+  (interactive)
+  "Get the directory name for the dired buffer.
+If current buffer not dired buffer, return nil."
+  (if (equal major-mode 'dired-mode)
+      (let ((result dired-directory))
+        (if (listp result)
+            (car result)
+          result))
+    nil))
+             
+  (print (equal major-mode 'dired-mode))
+  (print dired-directory))
+
 (defun filetree-show-cur-dir ()
   "Load files in current directory into current file list and show in tree mode."
   (interactive)
-  (let ((cur-buffer-file (buffer-file-name)))
+  (let ((cur-buffer-file (if (equal major-mode
+                                    'dired-mode)
+                             (filetree-get-dired-dir)
+                           (buffer-file-name))))
     (if cur-buffer-file
         (progn
           (setq filetree-current-file-list nil)
           (setq filetree-file-list-stack (list filetree-current-file-list))
-          (filetree-expand-dir (file-name-directory (buffer-file-name)) 0))
-      (error "Current buffer must correspond to a file to run filetree-show-cur-dir"))))
+          (filetree-expand-dir (file-name-directory cur-buffer-file) 0))
+      (error "Current buffer must correspond to a file or a dired buffer to run filetree-show-cur-dir"))))
 
 (defun filetree-show-cur-dir-recursively ()
   "Load files in current directory (recursively) into current file list and show in tree mode."
   (interactive)
-  (let ((cur-buffer-file (buffer-file-name)))
+  (let ((cur-buffer-file (if (equal major-mode
+                                    'dired-mode)
+                             (filetree-get-dired-dir)
+                           (buffer-file-name))))
     (if cur-buffer-file
         (progn
           (setq filetree-current-file-list nil)
           (setq filetree-file-list-stack (list filetree-current-file-list))
-          (filetree-expand-dir-recursively (file-name-directory (buffer-file-name)) 0))
-      (error "Current buffer must correspond to a file to run filetree-show-cur-dir-recursively"))))
+          (filetree-expand-dir-recursively (file-name-directory cur-buffer-file) 0))
+      (error "Current buffer must correspond to a file or a dired buffer to run filetree-show-cur-dir-recursively"))))
 
 (defun filetree-show-cur-buffers ()
   "Load file buffers in buffer list into current file list and show in tree mode."
