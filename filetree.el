@@ -624,13 +624,10 @@ prompted for a string/regular expression to filter with."
     (setq filetree-new-files (delete nil (mapcar (lambda (x)
                                                   (if (string-match
                                                        my-filetree-regex
-                                                         (file-name-nondirectory (car x)))
-                                                        (if (stringp (nth 1 x))
-                                                            nil
-                                                          (if (null (nth 1 x))
-                                                              (car x)
-                                                            (concat (car x) "/")))
-                                                      nil))
+                                                       (file-name-nondirectory (car x)))
+                                                      (if (null (nth 1 x))
+                                                          (car x)
+                                                        nil)))
                                                 (directory-files-and-attributes dir t))))
     (dolist (entry filetree-exclude-list)
                    (setq filetree-new-files (delete nil (mapcar (lambda (x)
@@ -1526,34 +1523,41 @@ If current buffer not dired buffer, return nil."
             (car result)
           result))
     nil))
-             
+
+(defun filetree-get-cur-dir ()
+  "Get current directory using different methods based on buffer.
+Supported buffer types are: 
+* file buffer
+* dired buffer
+* eshell buffer"
+  (interactive)
+  (let ((cur-buffer-dir
+         (if (equal major-mode 'dired-mode)
+             (filetree-get-dired-dir)
+           (if (equal major-mode 'eshell-mode)
+               (eshell/pwd)
+             (if (buffer-file-name)
+                 (file-name-directory (buffer-file-name))
+               nil)))))
+    (if cur-buffer-dir
+        cur-buffer-dir
+      (error "Current buffer must be a file buffer, a dired buffer, or an eshell buffer."))))
+
 (defun filetree-show-cur-dir ()
   "Load files in current directory into current file list and show in tree mode."
   (interactive)
-  (let ((cur-buffer-file (if (equal major-mode
-                                    'dired-mode)
-                             (filetree-get-dired-dir)
-                           (buffer-file-name))))
-    (if cur-buffer-file
-        (progn
-          (setq filetree-current-file-list nil)
-          (setq filetree-file-list-stack (list filetree-current-file-list))
-          (filetree-expand-dir (file-name-directory cur-buffer-file) 0))
-      (error "Current buffer must correspond to a file or a dired buffer to run filetree-show-cur-dir"))))
+  (let ((cur-buffer-dir (filetree-get-cur-dir)))
+    (setq filetree-current-file-list nil)
+    (setq filetree-file-list-stack (list filetree-current-file-list))
+    (filetree-expand-dir cur-buffer-dir 0)))
 
 (defun filetree-show-cur-dir-recursively ()
   "Load files in current directory (recursively) into current file list and show in tree mode."
   (interactive)
-  (let ((cur-buffer-file (if (equal major-mode
-                                    'dired-mode)
-                             (filetree-get-dired-dir)
-                           (buffer-file-name))))
-    (if cur-buffer-file
-        (progn
-          (setq filetree-current-file-list nil)
-          (setq filetree-file-list-stack (list filetree-current-file-list))
-          (filetree-expand-dir-recursively (file-name-directory cur-buffer-file) 0))
-      (error "Current buffer must correspond to a file or a dired buffer to run filetree-show-cur-dir-recursively"))))
+  (let ((cur-buffer-file (filetree-get-cur-dir)))
+    (setq filetree-current-file-list nil)
+    (setq filetree-file-list-stack (list filetree-current-file-list))
+    (filetree-expand-dir-recursively cur-buffer-file 0)))
 
 (defun filetree-show-cur-buffers ()
   "Load file buffers in buffer list into current file list and show in tree mode."
