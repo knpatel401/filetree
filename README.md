@@ -42,7 +42,7 @@ Alternative wrappers for recentf (e.g., the [helm](https://emacs-helm.github.io/
 ## Current buffers use case
 This package can be used as an alternative to ibuffer in some cases, using the command filetree-show-cur-buffers.  The command provides the same benefits over ibuffer as the recentf wrapper does over recentf in the previous section.
 
-While ibuffer represents all buffers, filetree-show-cur-buffers represents files not buffers.  As a result it does not represent buffers that are not associated with files (e.g., *Messages* or *scratch*).  Another difference is that ibuffer provides some buffer grouping tools.  In filetree there are implicit groupings via the directory structure, or via filtering or font highlighting rules, but no explicit grouping.
+While ibuffer represents all buffers, filetree-show-cur-buffers represents files not buffers.  As a result it does not represent buffers that are not associated with files (e.g., \*Messages\* or \*scratch\*).  Another difference is that ibuffer provides some buffer grouping tools.  In filetree there are implicit groupings via the directory structure, or via filtering or font highlighting rules, but no explicit grouping.
 
 [bufler](https://github.com/alphapapa/bufler.el) is an alternative that provides some additional automatic buffer grouping support over ibuffer.  The differences between bufler and filetree are the same as the differences between ibuffer and filetree.
 
@@ -58,7 +58,7 @@ The project/file explorer use case for filetree is different, and comes from a c
 In a typical filetree use case, the filetree is pulled up for an action (e.g., finding a file, searching for something in the files in a project, visualizing the directory structure), the interactive tools are used to find the desired information or file and then filetree is closed.  This is different from how a conventional project/file explorer is typically used.
 
 ## Dired use case
-The filetree package can do some basic file system operations that are akin to operations available in dired.  In particular, the user can filter, expand, and mark files--and then perform operations like delete files, copy/move files, run script on files, grep across the marked files, etc..  Dired can run a more extensive set of file system operations, and so filetree is not a replacement for dired.  However, an advantage of filetree is that it makes it easier to find, visualize, and mark files across different parts of the file system.  So if the desired operations are basic (i.e., copy/move/delete/grep/run script on), then filetree can be a good alternative.
+The filetree package can do some basic file system operations that are akin to operations available in dired.  In particular, the user can filter, expand, and mark files--and then perform operations like delete files, copy/move files, run script on files, grep across the marked files, etc..  Dired can run a more extensive set of file system operations, and so filetree is not a replacement for dired.  However, an advantage of filetree is that it makes it easier to find, visualize, and mark files across different parts of the file system.  So if the desired operations are basic (i.e., copy/move/delete/grep/run script on), then filetree can be a good alternative.  Also, you can go back and forth between a dired buffer and the filetree buffer; pressing "d" when the point is on a directory in the filetree buffer will open a dired buffer at that directory, and calling filetree-show-cur-dir or filetree-show-cur-dir-recursively from a dired buffer will open the filetree buffer with files in the directory in current dired buffer.
 
 BTW if there's an operation that you would like to have in filetree, please file an issue and I'll try to add it.
 
@@ -82,6 +82,7 @@ The following commands start the viewer with the corresponding file list
 | filetree-show-files               | populate files from file list in argument     |
 | filetree-close-session            | exit viewer (tied to q in keymap)             |
 
+filetree-show-cur-dir and filetree-show-cur-dir-recursively can be called from a file buffer, a dired buffer, or an eshell buffer.  When the functions are called from a file buffer, the directory of the file is used.  For a dired buffer, the directory shown in the dired buffer is used, and when the functions are called from an eshell buffer, the current directory in the eshell is used.
 
 Within the *Filetree* window the following navigation commands can be used
 | Command              | key map          | Comment         |
