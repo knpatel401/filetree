@@ -1514,9 +1514,9 @@ is empty use `filetree-current-file-list'"
   (filetree-show-files recentf-list))
 
 (defun filetree-get-dired-dir ()
-  (interactive)
   "Get the directory name for the dired buffer.
 If current buffer not dired buffer, return nil."
+  (interactive)
   (if (equal major-mode 'dired-mode)
       (let ((result dired-directory))
         (if (listp result)
@@ -1526,7 +1526,7 @@ If current buffer not dired buffer, return nil."
 
 (defun filetree-get-cur-dir ()
   "Get current directory using different methods based on buffer.
-Supported buffer types are: 
+Supported buffer types are:
 * file buffer
 * dired buffer
 * eshell buffer"
@@ -1534,14 +1534,15 @@ Supported buffer types are:
   (let ((cur-buffer-dir
          (if (equal major-mode 'dired-mode)
              (filetree-get-dired-dir)
-           (if (equal major-mode 'eshell-mode)
+           (if (and (equal major-mode 'eshell-mode)
+                    (fboundp 'eshell/pwd))
                (eshell/pwd)
              (if (buffer-file-name)
                  (file-name-directory (buffer-file-name))
                nil)))))
     (if cur-buffer-dir
         cur-buffer-dir
-      (error "Current buffer must be a file buffer, a dired buffer, or an eshell buffer."))))
+      (error "Current buffer must be a file buffer, a dired buffer, or an eshell buffer"))))
 
 (defun filetree-show-cur-dir ()
   "Load files in current directory into current file list and show in tree mode."
