@@ -1593,6 +1593,41 @@ Supported buffer types are:
   (interactive)
   (filetree-show-files (filetree-find-files-with-notes)))
 
+;; (defun filetree-show-vc-root-dir ()
+;;   "Load files in vc root directory of current file."
+;;   (interactive)
+;;   (if (fboundp 'vc-root-dir)
+;;       (let ((root-dir (vc-root-dir)))
+;;         (if root-dir
+;;             (progn
+;;               (setq filetree-current-file-list nil)
+;;               (setq filetree-file-list-stack (list filetree-current-file-list))
+;;               (filetree-expand-dir root-dir 0))
+;;           (error "Not a version controlled repo")))
+;;     (error "No vc-root-dir command available to find root dir")))
+
+(defun filetree-show-vc-root-dir-recursively ()
+  "Load files (recursively) in vc root directory of current file."
+  (interactive)
+  (if (fboundp 'vc-root-dir)
+      (let ((root-dir (vc-root-dir)))
+        (if root-dir
+            (progn
+              (setq filetree-current-file-list nil)
+              (setq filetree-file-list-stack (list filetree-current-file-list))
+              (filetree-expand-dir-recursively root-dir 0)
+              ;; filter for only files under vc and add to stack
+              (if (fboundp 'vc-backend)
+                  (progn
+                    (setq filetree-current-file-list
+                          (delete nil (mapcar (lambda (x)
+                                                (if (vc-backend x)
+                                                    x nil))
+                                              filetree-current-file-list)))
+                    (filetree-update-buffer))))
+          (error "Not a version controlled repo")))
+    (error "No vc-root-dir command available to find root dir")))
+
 (define-derived-mode filetree nil "Text"
   "A mode to view and perform operations on files via a tree view"
   (make-local-variable 'filetree-list))

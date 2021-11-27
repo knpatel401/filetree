@@ -27,7 +27,7 @@ The filetree package provides a set of interactive tools for finding and discove
 * **Visual contextualization** - directory structure, faces for file types, icons, file info (mode, size, date, etc.), file notes in side window
 * **Interactive filtering tools** - filter by type, regex, helm-based interactive filtering, file marking, etc.
 * **File discovery** - tools for finding new files from original file list
-* **Actions on files** - tools for acting on files in file list (e.g., grep)
+* **Actions on files** - tools for acting on files in file list (e.g., grep, move/copy/delete files, shell command on files)
 * **Notes** - support for file specific org-mode notes
 
 These tools can be used in a number of different ways.  Some possible use cases along with alternatives are discussed below.
@@ -71,18 +71,21 @@ Alternatives: [org-noter](https://github.com/weirdNox/org-noter) is an alternati
 
 ## Starting and Exit Viewer + Navigation & selection
 The following commands start the viewer with the corresponding file list
-| Command                           | Comment                                       |
-|-----------------------------------|-----------------------------------------------|
-| filetree-select-file-list         | select file list from perviously saved lists  |
-| filetree-show-recentf-files       | populate files from recentf-list              |
-| filetree-show-cur-dir             | populate files from current dir               |
-| filetree-show-cur-dir-recursively | populate files from current dir (recursively) | 
-| filetree-show-cur-buffers         | populate files from buffer-list               |
-| filetree-show-files-with-notes    | populate file list with files with "notes"    |
-| filetree-show-files               | populate files from file list in argument     |
-| filetree-close-session            | exit viewer (tied to q in keymap)             |
+| Command                           | Comment                                                  |
+|-----------------------------------|----------------------------------------------------------|
+| filetree-select-file-list         | select file list from perviously saved lists             |
+| filetree-show-recentf-files       | populate files from recentf-list                         |
+| filetree-show-cur-dir             | populate files from current dir                          |
+| filetree-show-cur-dir-recursively | populate files from current dir (recursively)            |
+| filetree-show-vc-dir-recursively  | populate files from vc root of current dir (recursively) |
+| filetree-show-cur-buffers         | populate files from buffer-list                          |
+| filetree-show-files-with-notes    | populate file list with files with "notes"               |
+| filetree-show-files               | populate files from file list in argument                |
+| filetree-close-session            | exit viewer (tied to q in keymap)                        |
 
 filetree-show-cur-dir and filetree-show-cur-dir-recursively can be called from a file buffer, a dired buffer, or an eshell buffer.  When the functions are called from a file buffer, the directory of the file is used.  For a dired buffer, the directory shown in the dired buffer is used, and when the functions are called from an eshell buffer, the current directory in the eshell is used.
+
+filetree-show-vc-dir-recursively can be called from a file buffer or a dired buffer (calling from an eshell buffer is not currently supported).  filetree-show-vc-dir-recursively first loads all files recursively in the version control root directory, puts that on the stack, then filters to only include files under version control and puts that on the stack.  So only the files under version control will be seen after running the command--to see all the files under the root directory after running the filetree-show-vc-dir-recursively command simply press "b" (filetree-pop-file-list-stack) to pop the current file list off the stack.
 
 Within the *Filetree* window the following navigation commands can be used
 | Command              | key map          | Comment         |
