@@ -1609,13 +1609,15 @@ Supported buffer types are:
 (defun filetree-show-vc-root-dir-recursively ()
   "Load files (recursively) in vc root directory of current file."
   (interactive)
-  (if (fboundp 'vc-root-dir)
-      (let ((root-dir (vc-root-dir)))
+  (if (or (fboundp 'vc-root-dir) (fboundp 'magit-toplevel))
+
+      (let ((root-dir (or (if (fboundp 'vc-root-dir) (vc-root-dir))
+                          (if (fboundp 'magit-toplevel) (magit-toplevel)))))
         (if root-dir
             (progn
               (setq filetree-current-file-list nil)
               (setq filetree-file-list-stack (list filetree-current-file-list))
-              (filetree-expand-dir-recursively root-dir 0)
+              (filetree-expand-dir-recursively (expand-file-name root-dir) 0)
               ;; filter for only files under vc and add to stack
               (if (fboundp 'vc-backend)
                   (progn
@@ -1626,7 +1628,7 @@ Supported buffer types are:
                                               filetree-current-file-list)))
                     (filetree-update-buffer))))
           (error "Not a version controlled repo")))
-    (error "No vc-root-dir command available to find root dir")))
+    (error "No vc-root-dir or magit-toplevel command available to find root dir")))
 
 (define-derived-mode filetree nil "Text"
   "A mode to view and perform operations on files via a tree view"
