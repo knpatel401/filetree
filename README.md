@@ -73,7 +73,7 @@ Alternatives: [org-noter](https://github.com/weirdNox/org-noter) is an alternati
 The following commands start the viewer with the corresponding file list
 | Command                           | Comment                                                  |
 |-----------------------------------|----------------------------------------------------------|
-| filetree-select-file-list         | select file list from perviously saved lists             |
+| filetree-select-file-list         | select file list from previously saved lists             |
 | filetree-show-recentf-files       | populate files from recentf-list                         |
 | filetree-show-cur-dir             | populate files from current dir                          |
 | filetree-show-cur-dir-recursively | populate files from current dir (recursively)            |
