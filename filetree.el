@@ -873,9 +873,17 @@ In other wrods go to prev branch of tree."
 (defun filetree-print-flat (file-list)
   "Print FILE-LIST in flat format."
   (let ((first-file (car file-list))
-        (remaining (cdr file-list)))
+        (remaining (cdr file-list))
+        (draw-marks (> (length filetree-marked-file-list) 0)))
     (let ((filename (file-name-nondirectory first-file))
           (directory-name (file-name-directory first-file)))
+      (insert (filetree-extra-file-info first-file))
+      (if draw-marks
+          (if (member first-file filetree-marked-file-list)
+              (insert filetree-symb-for-mark)
+            (insert " ")))    
+      (if filetree-use-all-the-icons
+          (insert (all-the-icons-icon-for-file filename) " "))
       (insert-text-button  filename
                            'face (filetree-file-face first-file)
                            'action (lambda (x) (find-file (button-get x 'name)))
