@@ -76,49 +76,63 @@
 
 (defgroup filetree nil
   "Tree view of file list and file notes."
-  :group 'matching
+  :group 'files
   :prefix "filetree-")
 
 (defvar filetree-version "1.1")
+
+(defgroup filetree-configurations nil
+  "Filetree configurations."
+  :group 'filetree)
 
 (defconst filetree-buffer-name "*filetree*")
 
 (defcustom filetree-notes-file (concat user-emacs-directory
                                        "filetree-notes.org")
   "File used for file specific notes."
+  :group 'filetree-configurations  
   :type 'file)
 (defcustom filetree-relative-notes-filename "filetree-notes-local.org"
   "Filename for file specific notes file with relative path."
+  :group 'filetree-configurations  
   :type 'string)
 
 (defcustom filetree-saved-lists-file (concat user-emacs-directory
                                              "filetree-saved-lists.el")
   "File used for saved file lists."
+  :group 'filetree-configurations  
   :type 'file)
-(defcustom filetree-default-file-face 'default
-  "Default face to use for files.
-This is used if the file doesn't match any regex in `filetree-filetype-list'."
-  :type 'face)
+
+(defgroup filetree-startup-prefs nil
+  "Filetree preferences for initial state."
+  :group 'filetree)
 (defcustom filetree-use-all-the-icons nil
   "Set to t to use file and directory icons.
 This can also be toggled using `filetree-toggle-use-all-icons'."
+  :group 'filetree-startup-prefs  
   :type 'boolean)
 (defcustom filetree-info-window nil
   "Set to t to show info in side window.
 This can also be toggled using `filetree-toggle-info-buffer'."
+  :group 'filetree-startup-prefs  
   :type 'boolean)
 (defcustom filetree-show-remote-file-info nil
   "Set to t to show additional file info for remote files as well."
+  :group 'filetree-startup-prefs  
   :type 'boolean)
+
 (defcustom filetree-enable-nonexistent-file-removal t
   "Set to t to check for and remove non-existent files during filetree updates."
+  :group 'filetree-configurations  
   :type 'boolean)
 (defcustom filetree-exclude-list
   '("~$" "#$" ".git\/" ".gitignore$" "\/\.\/$" "\/\.\.\/$" ".DS_Store$")
   "List of regex for files to exclude from file list."
+  :group 'filetree-configurations  
   :type '(repeat regexp))
 (defcustom filetree-helm-candidate-number-limit 10000
   "Maximum number of candidates to show in tree when using helm-based filtering."
+  :group 'filetree-configurations  
   :type 'integer)
 (defcustom filetree-info-cycle-list
   '(;; cycle 0 - no info
@@ -149,6 +163,7 @@ list has the following entries:
   string to show
 - string with justification to use for the column contents
   (left, right, center), default is left."
+  :group 'filetree-configurations  
   :type '(repeat (repeat :tag "View Set"
                          (list :tag "Column"
                                (string :tag "Heading")
@@ -174,6 +189,7 @@ Each entry of this list is itself a list with the following entries:
 - label for filetype
 - regex for filetype
   syntax highlighting to use for filetype"
+  :group 'filetree-configurations  
   :type '(repeat
           (list :tag "Filetype"
                 (string :tag "shortcut")
@@ -190,10 +206,12 @@ Each entry has:
 - label string
 - function that takes two files as input, it should return t if relative
   order is first then second, and nil otherwise."
-  :type '(repeat :tag "Sort Field"
-                 (string :tag "shortcut")
-                 (string :tag "Label")
-                 function))
+  :group 'filetree-configurations  
+  :type '(repeat
+          (list :tag "Sort Operation"
+                (string :tag "shortcut")
+                (string :tag "Label")
+                function)))
 
 (defgroup filetree-symb-for nil
   "Symbols used for drawing tree in filetree package."
@@ -202,36 +220,54 @@ Each entry has:
 
 (defcustom filetree-symb-for-root "\u25ba"
   "Symbol for end of mark indicating root dir."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 (defcustom filetree-symb-for-box "\u25a0"
   "Box symbol used in mark for root dir."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 (defcustom filetree-symb-for-vertical-pipe "\u2502"
   "Symbol to indicate continuing branch."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 (defcustom filetree-symb-for-horizontal-pipe "\u2500"
   "Symbol for branch for node on current line."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 (defcustom filetree-symb-for-left-elbow "\u2514"
   "Symbol for last node on branch."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 (defcustom filetree-symb-for-right-elbow "\u2518"
   "Symbol for bottom right hand corner."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 (defcustom filetree-symb-for-branch-and-cont "\u251c"
   "Symbol indicating continuing branch which also includes node on current line."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 (defcustom filetree-symb-for-file-node "\u25cf"
   "Symbol for file node."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 (defcustom filetree-symb-for-mark (propertize "\u25b6"
                                               'font-lock-face
                                               '(:foreground "DarkOliveGreen4"))
   "Symbol for marking files."
-  :type 'character)
+  :type 'character
+  :group 'filetree-symb-for)
 
 ;; Faces for filetypes
 ;; -------------------
+(defgroup filetree-faces nil
+  "Faces used in filetree package."
+  :group 'filetree)
+
+(defcustom filetree-default-file-face 'default
+  "Default face to use for files.
+This is used if the file doesn't match any regex in `filetree-filetype-list'."
+  :group 'filetree-faces
+  :type 'face)
 (defface filetree-menu-heading-face
   '((((background dark)) (:foreground "steel blue"
                                       :underline t
@@ -242,7 +278,7 @@ Each entry has:
                     :weight bold
                     :height 1.2)))
   "Face used for help menu headings in filetree."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 (defface filetree-menu-comment-face
   '((((supports :slant italic))
      :slant italic)
@@ -254,54 +290,55 @@ Each entry has:
      ;; workaround (to `dim' on ttys).
      :slant italic))
   "Basic italic face."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 ;;(defface filetree-menu-heading-face
 ;;  '(:foreground "steel blue" :underline t :weight bold :height 1.2)
 ;;  "Face used for help menu headings in filetree."
-;;  :group 'filetree :group 'font-lock-highlighting-faces)
+;;  :group 'filetree)
 (defface filetree-python-face
   '((((background dark)) (:foreground "steel blue"))
     (t                   (:foreground "steel blue")))
   "*Face used for python files in filetree."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 
 (defface filetree-org-mode-face
   '((((background dark)) (:foreground "DarkOliveGreen4"))
     (t                   (:foreground "DarkOliveGreen4")))
   "*Face used for org-mode files in filetree."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 
 (defface filetree-elisp-face
   '((((background dark)) (:foreground "yellow"))
     (t                   (:foreground "purple")))
   "*Face used for elisp files in filetree."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 
 (defface filetree-C-face
   '((((background dark)) (:foreground "lightblue"))
     (t                   (:foreground "navyblue")))
   "*Face used for C files in filetree."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 
 (defface filetree-pdf-face
   '((((background dark)) (:foreground "red"))
     (t                   (:foreground "maroon")))
   "*Face used for pdf files in filetree."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 
 (defface filetree-matlab-face
   '((((background dark)) (:foreground "orange"))
     (t                   (:foreground "orange")))
   "*Face used for matlab files in filetree."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 
 (defface filetree-text-mode-face
   '((((background dark)) (:foreground "gray50"))
     (t                   (:foreground "gray50")))
   "*Face used for text files in filetree."
-  :group 'filetree :group 'font-lock-highlighting-faces)
+  :group 'filetree-faces)
 
-
+;; variables
+;; ---------
 (defvar filetree-info-buffer nil)
 (defvar filetree-info-buffer-state nil)
 (defvar filetree-saved-lists '(("recentf" (lambda ()
@@ -694,6 +731,7 @@ TODO: combine with filetree-expand."
     map)
   "Keymap for filetree.")
 
+;; functions
 (defun filetree-close-session ()
   "Close filetree session."
   (interactive)
