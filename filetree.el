@@ -4,8 +4,9 @@
 ;;
 ;; Author: Ketan Patel <knpatel401@gmail.com>
 ;; URL: https://github.com/knpatel401/filetree
-;; Package-Requires: ((emacs "27.1") (dash "2.12.0") (helm "3.7.0"))
-;; Version: 1.0.1
+;; Package-Requires: ((emacs "27.1") (dash "2.12.0") (helm "3.7.0")
+;;                    (seq "2.23") (transient "0.3.6"))
+;; Version: 1.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -49,6 +50,10 @@
 ;; M-x filetree-show-cur-dir
 ;; M-x filetree-show-cur-dir-recursively
 ;; M-x filetree-show-cur-buffers
+;;
+;; Use the following command to pull up help transient for available commands
+;; M-x filetree-command-help
+;;
 
 ;; -------------------------------------------
 ;;; Code:
@@ -59,6 +64,7 @@
 (require 'vc)
 (require 'dired-aux)
 (require 'face-remap)
+(require 'transient)
 ;;(require 'cl-lib)
 
 ;; External functions/variables
@@ -73,7 +79,7 @@
   :group 'matching
   :prefix "filetree-")
 
-(defvar filetree-version "1.01")
+(defvar filetree-version "1.1")
 
 (defconst filetree-buffer-name "*filetree*")
 
@@ -325,74 +331,366 @@ Each entry has:
                  (filetree-update-buffer)))
     (buffer . ("*helm-filetree-buffer*"))
     (prompt . ("selection:"))))
-  
-(defvar filetree-filetype-list nil
-  "List of file types with filter shortcuts, regex for filetype, and face.
-This is populated using `filetree-add-filetype', for example see
-`filetree-configure-default-filetypes'")
 
 (defvar filetree-current-info-cycle 0
   "This tracks the current state of file info on the left side of the window.")
 
+;; transient menus
+;; ---------------
+(defun filetree-command-help ()
+  "Wrapper for transient menu with key binding help for filetree."
+  (interactive)
+  (filetree-buffer-check)
+  (filetree--command-help))
+
+(transient-define-prefix filetree--command-help ()
+  "Filetree Help"
+  [:description (lambda ()
+                  (filetree--transient-heading "Help Main Menu"
+                                               "Filetree keybinding help menu."))
+   [:description (lambda ()
+                   (concat (propertize
+                            "Sub-menu prefixes"
+                            'face 'transient-heading)))
+    :pad-keys ""
+    :setup-children filetree--submenu-setup-children]]
+   
+  [["Basic Actions" :pad-keys ""
+    :setup-children filetree--basic-cmd-menu-setup-children]
+   ["Navigation" :pad-keys ""
+    :setup-children filetree--navigation-menu-setup-children]
+  ["Stack Commands" :pad-keys ""
+   :setup-children filetree--stack-menu-setup-children]])
+
+(defun filetree--submenu-setup-children (_)
+  "Setup submenu selections."
+   (mapcar (lambda (x)
+             (car
+             (transient--parse-child
+              'filetree--command-help
+              (append (list (car (where-is-internal
+                                  (if (car x)
+                                      (car x)
+                                    (nth 2 x)))))
+                      (cdr x)))))
+           '((nil "View modes       - commands to change view" filetree-view-mode-menu)
+             (nil "Load cmds        - commands to load filetree from different sources"
+                  filetree-load-cmd-menu)
+             (nil "Simple ops       - commands acting on file/dir at point"
+                  filetree-file-ops-menu)
+             (nil "Mark cmds        - commands related to marking files" filetree-mark-cmd-menu)
+             (nil "Filter/sort cmds - commands for filtering or sorting file list"
+                  filetree-filter)
+             (nil "Expand dir       - commands for adding files to file list"
+                  filetree-expand)
+             (nil "Expand dir recursively"
+                  filetree-expand-recursively)
+             (filetree-command-help "Exit help" transient-quit-all))))
+
+(defun filetree--transient-heading (title comment)
+  "Help function for transient TITLE and COMMENT."
+  (concat (propertize title 'face 'filetree-menu-heading-face)
+          " (C-g to exit)\n"
+          (propertize comment 'face 'filetree-menu-comment-face)
+          "\n"))
+
+(defun filetree--setup-children (child-list)
+  "Helper function to generate setup-children function for transient.
+CHILD-LIST is a list of children to show in the transient menu.  Each
+entry of the list has the following:
+- Label to show
+- function to call
+- any additional entries to send to transient--parse-child."
+  (mapcar (lambda (x)
+            (car
+             (transient--parse-child
+              'filetree-load-cmd-menu
+              (append (list (car (where-is-internal (nth 1 x))))
+                      x))))
+          child-list))
+  
+(defun filetree--navigation-menu-setup-children (_)
+  "Helper function to generate setup-children for navigation menu."
+  (filetree--setup-children '(("Down" filetree-next-line :transient t)
+                              ("Up" filetree-prev-line :transient t)
+                              ("Next branch" filetree-next-branch :transient t)
+                              ("Prev branch" filetree-prev-branch :transient t))))
+
+(defun filetree--stack-menu-setup-children (_)
+  "Helper function to generate setup-children for stack menu."
+  (filetree--setup-children '(("Back (pop stack)" filetree-pop-file-list-stack
+                               :transient t)
+                              ("Diff with stack" filetree-diff-with-file-list-stack
+                               :transient t)
+                              ("Union with stack" filetree-union-with-file-list-stack
+                               :transient t))))
+
+(defun filetree--basic-cmd-menu-setup-children (_)
+  "Helper function to generate setup-children for basic cmds."
+  (append
+   (filetree--setup-children '(("Quit filetree" filetree-close-session)
+                               ("Remove item" filetree-remove-item :transient t)))
+   (transient--parse-child
+    'filetree--command-help
+    '("<RET>" "open/narrow" filetree-open-or-narrow :transient t))))
+
+(transient-define-prefix filetree-view-mode-menu ()
+  "Transient for view modes"
+  [:description (lambda ()
+                  (filetree--transient-heading "View Modes Menu"
+                                               "Commands to change the view mode."))
+   ["Navigation" :pad-keys
+    ""
+    :setup-children filetree--navigation-menu-setup-children]]
+  [["View mode toggles"
+    ("/" "Toggle Combine Dirname" filetree-toggle-combine-dir-names)
+    ("." "Toggle tree/flat view" filetree-toggle-flat-vs-tree)
+    ("i" "Toggle info buffer" filetree-toggle-info-buffer)
+    (";" "Toggle icons" filetree-toggle-use-all-icons)]
+   ["Extra info controls"
+    ("]" "Cycle+ extra info" filetree-increment-current-info-cycle)
+    ("[" "Cycle- extra info" filetree-decrement-current-info-cycle)]
+   ["Depth controls"
+    ("0" "Full depth" filetree-set-max-depth)
+    ("1" "Depth 1" filetree-set-max-depth-1)
+    ("2" "Depth 2" filetree-set-max-depth-2)
+    ("3" "Depth 3" filetree-set-max-depth-3)
+    ("4" "Depth 4" filetree-set-max-depth-4)]
+   [""
+    ("5" "Depth 5" filetree-set-max-depth-5)
+    ("6" "Depth 6" filetree-set-max-depth-6)
+    ("7" "Depth 7" filetree-set-max-depth-7)
+    ("8" "Depth 8" filetree-set-max-depth-8)
+    ("9" "Depth 9" filetree-set-max-depth-9)]])
+
+(transient-define-prefix filetree-filter ()
+  "Filter by regex commands"
+  [:description (lambda ()
+                  (filetree--transient-heading "Filter Menu"
+                                               "Commands to filter the filetree list."))
+   ["Navigation" :pad-keys
+    ""
+    :setup-children filetree--navigation-menu-setup-children]
+   ["Stack Commands" :pad-keys
+   ""
+   :setup-children filetree--stack-menu-setup-children]]
+
+   [["Regex filters"
+    :setup-children filetree--filter-regex-setup-children]
+   [""
+    ("<RET>" "Custom" (lambda () (interactive) (filetree-filter-by-regex nil)))]
+   ["Other Filters"
+    ("H" "Helm-based filter" filetree-helm-filter)]
+   ["Sort functions"
+    :setup-children filetree--filter-sort-setup-children]])
+
+(defun filetree--filter-regex-setup-children (_)
+  "Setup regex filter functions."
+   (mapcar (lambda (x)
+             (car
+             (transient--parse-child
+              'filetree-filter
+              (list (car x)
+                    (nth 1 x)
+                    (lambda ()
+                      (interactive)
+                      (filetree-filter-by-regex (nth 2 x)))))))
+           filetree-filetype-list))
+
+(defun filetree--filter-sort-setup-children (_)
+  "Setup regex filter functions."
+   (mapcar (lambda (x)
+             (car
+             (transient--parse-child
+              'filetree-filter
+              x)))
+           filetree-sort-operation-list))
+
+(transient-define-prefix filetree-expand ()
+  "Expand/Add to file list"
+  [:description (lambda ()
+                  (filetree--transient-heading "Expand Menu"
+                                               "Commands to expand the filetree list."))
+   ["Navigation" :pad-keys
+    ""
+    :setup-children filetree--navigation-menu-setup-children]
+   ["Stack Commands" :pad-keys
+   ""
+   :setup-children filetree--stack-menu-setup-children]]
+   [["Regex filters"
+    :setup-children filetree--expand-setup-children]
+   [""
+    ("<RET>" "Custom" (lambda () (interactive) (filetree-expand-dir nil nil)))]])
+
+(defun filetree--expand-setup-children (_)
+  "Setup regex expansion functions."
+   (mapcar (lambda (x)
+             (car
+              (transient--parse-child
+              'filetree-filter
+              (list (car x)
+                    (nth 1 x)
+                    (lambda ()
+                      (interactive)
+                      (filetree-expand-dir nil (nth 2 x)))))))
+           filetree-filetype-list))
+
+(transient-define-prefix filetree-expand-recursively ()
+  "Expand/Add to file list recursively.
+TODO: combine with filetree-expand."
+  [:description (lambda ()
+                  (filetree--transient-heading "Expand Menu"
+                                               "Commands to expand the filetree list."))
+   ["Navigation" :pad-keys
+    ""
+    :setup-children filetree--navigation-menu-setup-children]
+   ["Stack Commands" :pad-keys
+   ""
+   :setup-children filetree--stack-menu-setup-children]]
+  [["Regex filters"
+    :setup-children filetree--expand-recursive-setup-children]
+   [""
+    ("<RET>" "Custom" (lambda () (interactive)
+                        (filetree-expand-dir nil nil t)))]])
+
+(defun filetree--expand-recursive-setup-children (_)
+  "TODO: combine with filetree--expand-setup-children."
+   (mapcar (lambda (x)
+             (car
+             (transient--parse-child
+              'filetree-filter
+              (list (car x)
+                    (nth 1 x)
+                    (lambda ()
+                      (interactive)
+                      (filetree-expand-dir nil (nth 2 x) t))))))
+           filetree-filetype-list))
+
+(transient-define-prefix filetree-load-cmd-menu ()
+  "Transient for show commands."
+  [:description (lambda ()
+                  (filetree--transient-heading "Filetree Load Command Menu"
+                                               "Commands to load file list from different sources."))
+                ["Navigation" :pad-keys
+                 ""
+                 :setup-children filetree--navigation-menu-setup-children]
+                ["Stack Commands" :pad-keys
+                 ""
+                 :setup-children filetree--stack-menu-setup-children]]
+  [["Show commands"
+    ("r" "Recent files" filetree-show-recentf-files)
+    ("c" "Current Dir" filetree-show-cur-dir)
+    ("C" "Current Dir (recursive)" filetree-show-cur-dir-recursively)
+    ("B" "Current Buffers" filetree-show-cur-buffers)
+    ("v" "VC Root Dir (recursive)" filetree-show-vc-root-dir-recursively)
+    ("n" "Files with Notes" filetree-show-files-with-notes)]
+   ["File List"
+   ("L" "Select file list" filetree-select-file-list)
+   ("S" "Save file list" filetree-save-list)
+   ("D" "Delete file list" filetree-delete-list)]])
+
+(transient-define-prefix filetree-file-ops-menu ()
+  "Transient for operations on file/dir at point."
+  [:description (lambda ()
+                  (filetree--transient-heading "Filetree File Operations Menu"
+                                               "Commands acting on file/dir at point."))
+                ["Navigation" :pad-keys
+                 ""
+                 :setup-children filetree--navigation-menu-setup-children]
+                ["Stack Commands" :pad-keys
+                 ""
+                 :setup-children filetree--stack-menu-setup-children]]
+  [["Show commands"
+    ("d" "Dired - open dired on dir at point" filetree-run-dired)
+    ("g" "Magit - open magit on repo at point" filetree-run-magit)]])
+
+(transient-define-prefix filetree-mark-cmd-menu ()
+  "Transient for mark commands"
+  [:description (lambda ()
+                  (filetree--transient-heading "Mark Command Menu"
+                                               "Commands to mark files and perform operations on marked files."))
+                ["Navigation" :pad-keys ""
+                 :setup-children filetree--navigation-menu-setup-children] ]
+  [["Mark Commands"
+  "(menu persistent operations)"
+    ("m" "Mark item" filetree-mark-item :transient t)
+    ("A" "Mark all" filetree-mark-all :transient t)
+    ("c" "Clear marks" filetree-clear-marks :transient t)]
+  
+   ["Operations on Marked Files"
+    ("M" "Selected marked items" filetree-select-marked-items)
+    ("g" "Grep marked files" filetree-grep-marked-files)
+    ("C" "Copy marked files" filetree-copy-marked-files-only)
+    ("R" "Move marked files" filetree-move-marked-files-only)
+    ("o" "Open marked files" filetree-open-marked-files)
+    ("K" "Kill marked buffers" filetree-kill-marked-buffers)
+    ("!" "Shell cmd on marked" filetree-do-shell-command-on-marked-files-only)]])
+
 (defvar filetree-map
   (let ((map (make-sparse-keymap)))
-    ;; (define-key map "?" '(lambda () (interactive) (message "%s %s" (filetree-get-name)
-    ;;                                                          (if (button-at (point))
-    ;;                                                              (button-get (button-at (point)) 'subtree)
-    ;;                                                            nil))))
+    ;; transient menus
+    (define-key map "h" 'filetree-command-help)
+    (define-key map "v" 'filetree-view-mode-menu)
+    (define-key map "l" 'filetree-load-cmd-menu)
+    (define-key map "o" 'filetree-file-ops-menu)
+    (define-key map "m" 'filetree-mark-cmd-menu)
+    (define-key map "f" 'filetree-filter)
+    (define-key map "e" 'filetree-expand)
+    (define-key map "E" 'filetree-expand-recursively)
+    ;; navigation
     (define-key map "j" 'filetree-next-line)
     (define-key map "k" 'filetree-prev-line)
     (define-key map (kbd "<down>") 'filetree-next-line)
     (define-key map (kbd "<up>") 'filetree-prev-line)
-    (define-key map (kbd "C-j") 'filetree-next-line)
-    (define-key map (kbd "C-k") 'filetree-prev-line)
     (define-key map (kbd "SPC") 'filetree-next-branch)
     (define-key map (kbd "TAB") 'filetree-prev-branch)
+    ;; basic commands
     (define-key map "q" 'filetree-close-session)
-    (define-key map "0" 'filetree-set-max-depth)
-    (define-key map "1" 'filetree-set-max-depth-1)
-    (define-key map "2" 'filetree-set-max-depth-2)
-    (define-key map "3" 'filetree-set-max-depth-3)
-    (define-key map "4" 'filetree-set-max-depth-4)
-    (define-key map "5" 'filetree-set-max-depth-5)
-    (define-key map "6" 'filetree-set-max-depth-6)
-    (define-key map "7" 'filetree-set-max-depth-7)
-    (define-key map "8" 'filetree-set-max-depth-8)
-    (define-key map "9" 'filetree-set-max-depth-9)
-    (define-key map "r" 'filetree-show-recentf-files)
-    (define-key map "f" 'filetree-filter)
-    (define-key map "/" 'filetree-toggle-combine-dir-names)
+    (define-key map "x" 'filetree-remove-item)
+    (define-key map (kbd "<RET>") 'filetree-open-or-narrow)
+    ;; stack operations
     (define-key map "b" 'filetree-pop-file-list-stack)
     (define-key map "-" 'filetree-diff-with-file-list-stack)
     (define-key map "+" 'filetree-union-with-file-list-stack)
-    (define-key map "g" 'filetree-grep-marked-files)
-    (define-key map "C" 'filetree-copy-marked-files-only)
-    (define-key map "R" 'filetree-move-marked-files-only)
-    (define-key map "d" 'filetree-run-dired)
-    (define-key map "e" 'filetree-expand-dir)
-    (define-key map "E" 'filetree-expand-dir-recursively)
-    (define-key map "x" 'filetree-remove-item)
-    (define-key map "o" 'filetree-open-marked-files)
-    (define-key map "K" 'filetree-kill-marked-buffers)
-    (define-key map "m" 'filetree-mark-item)
-    (define-key map "A" 'filetree-mark-all)
-    (define-key map "M" 'filetree-select-marked-items)
-    (define-key map "!" 'filetree-do-shell-command-on-marked-files-only)
-    (define-key map "c" 'filetree-clear-marks)
-    (define-key map "L" 'filetree-select-file-list)
-    (define-key map "S" 'filetree-save-list)
-    (define-key map "D" 'filetree-delete-list)
-    ;; (define-key map "-" 'filetree-reduce-list-by-10)
-    (define-key map "." 'filetree-toggle-flat-vs-tree)
-    (define-key map "i" 'filetree-toggle-info-buffer)
-    (define-key map "I" (lambda ()
-                          "Toggle filetree-info-buffer and switch to it if active"
-                          (interactive)
-                          (filetree-toggle-info-buffer t)))
-    (define-key map "s" 'filetree-helm-filter)
-    (define-key map ";" 'filetree-toggle-use-all-icons)
-    (define-key map "]" 'filetree-increment-current-info-cycle)
-    (define-key map "[" 'filetree-decrement-current-info-cycle)
+
+    ;; legacy key bindings
+    ;; (possibly remove)
+    ;; (define-key map "i" 'filetree-toggle-info-buffer)
+    ;; (define-key map "I" (lambda ()
+    ;;                       "Toggle filetree-info-buffer and switch to it if active"
+    ;;                       (interactive)
+    ;;                       (filetree-toggle-info-buffer t)))
+    ;; (define-key map "0" 'filetree-set-max-depth)
+    ;; (define-key map "1" 'filetree-set-max-depth-1)
+    ;; (define-key map "2" 'filetree-set-max-depth-2)
+    ;; (define-key map "3" 'filetree-set-max-depth-3)
+    ;; (define-key map "4" 'filetree-set-max-depth-4)
+    ;; (define-key map "5" 'filetree-set-max-depth-5)
+    ;; (define-key map "6" 'filetree-set-max-depth-6)
+    ;; (define-key map "7" 'filetree-set-max-depth-7)
+    ;; (define-key map "8" 'filetree-set-max-depth-8)
+    ;; (define-key map "9" 'filetree-set-max-depth-9)
+    ;; (define-key map "r" 'filetree-show-recentf-files)
+    ;; (define-key map "/" 'filetree-toggle-combine-dir-names)
+    ;; (define-key map "g" 'filetree-grep-marked-files)
+    ;; (define-key map "C" 'filetree-copy-marked-files-only)
+    ;; (define-key map "R" 'filetree-move-marked-files-only)
+    ;; (define-key map "d" 'filetree-run-dired)
+    ;; (define-key map "o" 'filetree-open-marked-files)
+    ;; (define-key map "K" 'filetree-kill-marked-buffers)
+    ;; (define-key map "m" 'filetree-mark-item)
+    ;; (define-key map "A" 'filetree-mark-all)
+    ;; (define-key map "M" 'filetree-select-marked-items)
+    ;; (define-key map "!" 'filetree-do-shell-command-on-marked-files-only)
+    ;; (define-key map "c" 'filetree-clear-marks)
+    ;; (define-key map "L" 'filetree-select-file-list)
+    ;; (define-key map "S" 'filetree-save-list)
+    ;; (define-key map "D" 'filetree-delete-list)
+    ;; (define-key map "." 'filetree-toggle-flat-vs-tree)
+    ;; (define-key map "s" 'filetree-helm-filter)
+    ;; (define-key map ";" 'filetree-toggle-use-all-icons)
+    ;; (define-key map "]" 'filetree-increment-current-info-cycle)
+    ;; (define-key map "[" 'filetree-decrement-current-info-cycle)
     map)
   "Keymap for filetree.")
 
@@ -1783,6 +2081,7 @@ Supported buffer types are:
                     (filetree-update-buffer))))
           (error "Not a version controlled repo")))
     (error "No vc-root-dir or magit-toplevel command available to find root dir")))
+;; ---------------------------
 
 (define-derived-mode filetree nil "Text"
   "A mode to view and perform operations on files via a tree view"
