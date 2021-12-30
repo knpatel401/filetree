@@ -153,6 +153,42 @@ list has the following entries:
                                        (const "right")
                                        (const "center"))))))
 
+(defcustom filetree-filetype-list
+  '(;;(" " "No Filter"      "" "default")
+    ("p" "Python"      "\.py$"   "filetree-python-face")
+    ("o" "Org-mode"    "\.org$"  "filetree-org-mode-face")
+    ("e" "elisp"       "\\(?:\\.e\\(?:l\\|macs\\)\\)" "filetree-elisp-face")
+    ("c" "C"           "\\(?:\\.[ch]$\\|\\.cpp\\)"    "filetree-C-face")
+    ("d" "PDF"         "\.pdf$"  "filetree-pdf-face")
+    ("m" "Matlab"      "\.m$"    "filetree-matlab-face")
+    ("t" "Text"        "\.txt$"  "filetree-text-mode-face"))
+  "List of file types used for regex filt/expans & for syntax highlighting.
+Each entry of this list is itself a list with the following entries:
+- shortcut key or key sequence
+- label for filetype
+- regex for filetype
+  syntax highlighting to use for filetype"
+  :type '(repeat
+          (list :tag "Filetype"
+                (string :tag "shortcut")
+                (string :tag "Filetype label")
+                (regexp :tag "Regexp")
+                (face :tag "Face"))))
+
+(defcustom filetree-sort-operation-list
+  '(("ss" "File size" filetree-sort-by-file-size)
+    ("sd" "Last Modification Date" filetree-sort-by-last-modified)
+    ("sr" "Reverse list" filetree-reverse-list))
+  "List of file sorting functions when displaying file list as flat list.
+Each entry has:
+- label string
+- function that takes two files as input, it should return t if relative
+  order is first then second, and nil otherwise."
+  :type '(repeat :tag "Sort Field"
+                 (string :tag "shortcut")
+                 (string :tag "Label")
+                 function))
+
 (defgroup filetree-symb-for nil
   "Symbols used for drawing tree in filetree package."
   :group 'filetree
@@ -187,6 +223,78 @@ list has the following entries:
                                               '(:foreground "DarkOliveGreen4"))
   "Symbol for marking files."
   :type 'character)
+
+;; Faces for filetypes
+;; -------------------
+(defface filetree-menu-heading-face
+  '((((background dark)) (:foreground "steel blue"
+                                      :underline t
+                                      :weight bold
+                                      :height 1.2))
+    (t (:foreground "steel blue"
+                    :underline t
+                    :weight bold
+                    :height 1.2)))
+  "Face used for help menu headings in filetree."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+(defface filetree-menu-comment-face
+  '((((supports :slant italic))
+     :slant italic)
+    (((supports :underline t))
+     :underline t)
+    (t
+     ;; Default to italic, even if it doesn't appear to be supported,
+     ;; because in some cases the display engine will do its own
+     ;; workaround (to `dim' on ttys).
+     :slant italic))
+  "Basic italic face."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+;;(defface filetree-menu-heading-face
+;;  '(:foreground "steel blue" :underline t :weight bold :height 1.2)
+;;  "Face used for help menu headings in filetree."
+;;  :group 'filetree :group 'font-lock-highlighting-faces)
+(defface filetree-python-face
+  '((((background dark)) (:foreground "steel blue"))
+    (t                   (:foreground "steel blue")))
+  "*Face used for python files in filetree."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+
+(defface filetree-org-mode-face
+  '((((background dark)) (:foreground "DarkOliveGreen4"))
+    (t                   (:foreground "DarkOliveGreen4")))
+  "*Face used for org-mode files in filetree."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+
+(defface filetree-elisp-face
+  '((((background dark)) (:foreground "yellow"))
+    (t                   (:foreground "purple")))
+  "*Face used for elisp files in filetree."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+
+(defface filetree-C-face
+  '((((background dark)) (:foreground "lightblue"))
+    (t                   (:foreground "navyblue")))
+  "*Face used for C files in filetree."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+
+(defface filetree-pdf-face
+  '((((background dark)) (:foreground "red"))
+    (t                   (:foreground "maroon")))
+  "*Face used for pdf files in filetree."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+
+(defface filetree-matlab-face
+  '((((background dark)) (:foreground "orange"))
+    (t                   (:foreground "orange")))
+  "*Face used for matlab files in filetree."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+
+(defface filetree-text-mode-face
+  '((((background dark)) (:foreground "gray50"))
+    (t                   (:foreground "gray50")))
+  "*Face used for text files in filetree."
+  :group 'filetree :group 'font-lock-highlighting-faces)
+
 
 (defvar filetree-info-buffer nil)
 (defvar filetree-info-buffer-state nil)
@@ -304,44 +412,6 @@ If not, then give error message and throw exception."
                      filetree-buffer-name
                      " to run command."))))
 
-(defun filetree-add-filetype (name shortcut regex face)
-  "Add a filetype to `filetree-filetype-list' for special handling.
-- NAME is the name of the filetype (e.g., \"elisp\")
-- SHORTCUT is the shortcut char literal to use for this filetype when filtering
-- REGEX is the regular expression to use for detecting the filetype
-- FACE is the face to use for this filetype"
-  (push (list shortcut name regex face) filetree-filetype-list))
-
-(defun filetree-configure-default-filetypes ()
-  "Define default `filetree-filetype-list'.
-This defines filetype faces, filetype regex, and filter shortcuts.
-This function is given as an example.  The user can generate their own
-custom function with calls to `filetree-add-filetype'"
-  (interactive)
-  (setq filetree-filetype-list nil)
-  (filetree-add-filetype "No Filter" 0   ""        ())
-  (filetree-add-filetype "Python"    ?p  "\.py$"   '(:foreground "steel blue"))
-  (filetree-add-filetype "Org-mode"  ?o  "\.org$"  '(:foreground "DarkOliveGreen4"))
-  (filetree-add-filetype "elisp"     ?e  "\\(?:\\.e\\(?:l\\|macs\\)\\)"  '(:foreground "purple"))
-  (filetree-add-filetype "C"         ?c  "\\(?:\\.[ch]$\\|\\.cpp\\)"     '(:foreground "navyblue"))
-  (filetree-add-filetype "PDF"       ?d  "\.pdf$"  '(:foreground "maroon"))
-  (filetree-add-filetype "Matlab"    ?m  "\.m$"    '(:foreground "orange"))
-  (filetree-add-filetype "Text"      ?t  "\.txt$"  '(:foreground "gray50")))
-
-(filetree-configure-default-filetypes)
-
-;; (defun filetree-get-vc-state (filename)
-;;   "Return a string with the `vc-state' of FILENAME."
-;;   (let ((entry (format "%s"
-;;                        (or
-;;                         (if (not (file-remote-p filename))
-;;                             (vc-state filename)
-;;                           "remote")
-;;                         ""))))
-;;     (put-text-property 0 (length entry) 'face '(:foreground "steel blue")
-;;                        entry)
-;;     entry))
-
 (defun filetree-get-file-size (filename)
   "Return a string with the size of FILENAME."
   (if (or filetree-show-remote-file-info
@@ -378,30 +448,126 @@ custom function with calls to `filetree-add-filetype'"
           "    N/A"))
     "   remote"))
 
-(defun filetree-filter ()
-  "Interactive function to filter 'filetree-current-file-list'.
-Uses regular expression in 'filetree-filetype-list' or by expression entered by user."
+(defun filetree-get-git-status (filename)
+  "Return a string with git status for FILENAME."
+  (if (or filetree-show-remote-file-info
+          (not (file-remote-p filename)))
+      (let ((attributes (file-attributes filename))
+            (default-directory (file-name-directory filename))
+            (tracked ""))
+        (if (string-prefix-p "d" (file-attribute-modes attributes))
+            ""
+          (setq tracked (ignore-errors
+                          (process-lines "git" "ls-files" "--error-unmatch"
+                                         (file-name-nondirectory filename))))
+          (if tracked
+              (let ((file-state (ignore-errors
+                                  (process-lines "git" "status" "--porcelain" "--ignored"
+                                                 (file-name-nondirectory filename)))))
+                (if file-state
+                    (let ((file-state-summary (car (split-string (car file-state)))))
+                      (if (string-equal file-state-summary "M")
+                          (let ((diff-state (ignore-errors
+                                              (process-lines "git" "diff" "--name-only" "--staged"
+                                                             (file-name-nondirectory filename)))))
+                            (if diff-state
+                                ;; staged
+                                (propertize "\u25cb"
+                                            'font-lock-face '(:foreground "green")
+                                            'help-echo "Staged")
+                              ;; modified
+                              (propertize "\u25cf"
+                                          'font-lock-face '(:foreground "blue")
+                                          'help-echo "Modified")))
+                        file-state-summary))
+                  ;; up-to-date
+                  (propertize "\u25cf"
+                              'font-lock-face '(:foreground "green")
+                              'help-echo "Up-to-date")))
+            ;; untracked
+            (propertize "\u2349"
+                        'font-lock-face '(:foreground "gray")
+                        'help-echo "Untracked"))))
+    "remote"))
+
+(defun filetree-sort-by-file-size ()
+  "Sort `filetree-current-file-list' by file size."
   (interactive)
-  (let ((my-filetree-mode-filter-list (mapcar (lambda (x)
-                                              (seq-subseq x 0 3))
-                                            filetree-filetype-list))
-        (my-filetree-regex nil)
-        (filetree-elem nil)
-        (filetree-char-input (read-char)))
-    (while (/= (length my-filetree-mode-filter-list) 0)
-      (setq filetree-elem (car my-filetree-mode-filter-list))
-      (if (eq filetree-char-input (car filetree-elem))
-          (setq my-filetree-regex (nth 2 filetree-elem)))
-      (setq my-filetree-mode-filter-list (cdr my-filetree-mode-filter-list)))
-    (if (not my-filetree-regex)
-        (setq my-filetree-regex (read-string "Type a string: ")))
-    (setq filetree-current-file-list (delete nil (mapcar (lambda (x)
-                                                         (if (string-match
-                                                              my-filetree-regex
-                                                              (file-name-nondirectory x))
-                                                             x nil))
-                                                       filetree-current-file-list)))
+  (let ((sort-function (lambda (filename1 filename2)
+                         (if (or filetree-show-remote-file-info
+                                 (and (not (file-remote-p filename1))
+                                      (not (file-remote-p filename2))))
+                             (let ((attributes1 (file-attribute-size
+                                                 (file-attributes filename1)))
+                                   (attributes2  (file-attribute-size
+                                                  (file-attributes filename2))))
+                               (if (> attributes1 attributes2)
+                                   t nil))
+                           ;; if both remote return alphabetical order
+                           (if (and (file-remote-p filename1)
+                                    (file-remote-p filename2))
+                               (string< filename1 filename2)
+                             (if (file-remote-p filename1)
+                                 nil t))))))
+    (setq filetree-current-file-list
+          (sort filetree-current-file-list sort-function))
     (filetree-update-buffer)))
+
+(defun filetree-sort-by-last-modified ()
+  "Sort `filetree-current-file-list' by last modified date/time."
+  (interactive)
+  (let ((sort-function (lambda (filename1 filename2)
+                         (if (or filetree-show-remote-file-info
+                                 (and (not (file-remote-p filename1))
+                                      (not (file-remote-p filename2))))
+                             (let ((attributes1 (file-attribute-modification-time
+                                                 (file-attributes filename1)))
+                                   (attributes2  (file-attribute-modification-time
+                                                  (file-attributes filename2))))
+                               (if (time-less-p attributes1 attributes2)
+                                   nil t))
+                           ;; if both remote return alphabetical order
+                           (if (and (file-remote-p filename1)
+                                    (file-remote-p filename2))
+                               (string< filename1 filename2)
+                             (if (file-remote-p filename1)
+                                 nil t))))))
+    (setq filetree-current-file-list
+          (sort filetree-current-file-list sort-function))
+    (filetree-update-buffer)))
+
+(defun filetree-filter-by-regex (regex)
+  "Filter `filetree-current-file-list' by REGEX and update filetree."
+  (let ((regex (or regex
+                   (read-string "Type a regex: "))))
+    (setq filetree-current-file-list
+          (delete nil (mapcar (lambda (x)
+                                (if (string-match regex
+                                                  (file-name-nondirectory x))
+                                    x nil))
+                              filetree-current-file-list))))
+  (filetree-update-buffer))
+
+(defun filetree-open-or-narrow (&optional file-or-dir)
+  "Open file or narrow to subdirectory.
+If FILE-OR-DIR not specified, use file or dir at point."
+  (interactive)
+  (filetree-goto-node)
+  (let ((file-or-dir (or file-or-dir (filetree-get-name))))
+    (if (string= "/" (substring file-or-dir -1))
+        ;; narrow to subdir
+        (progn
+          (setq filetree-current-file-list (delete
+                                            nil
+                                          (mapcar (lambda (x)
+                                                    (if (string-match
+                                                         file-or-dir
+                                                         x)
+                                                        x nil))
+                                                  filetree-current-file-list)))
+          (filetree-update-buffer))
+      ;; open file
+      (find-file file-or-dir))))
 
 (defun filetree-remove-item (&optional file-or-dir)
   "Remove the file or subdir FILE-OR-DIR from the `filetree-current-file-list'.
@@ -597,92 +763,55 @@ If file-or-dir not specified, use file or dir at point."
       (button-get (button-at (point)) 'name)
     nil))
 
-(defun filetree-expand-dir (&optional dir filter)
-  "Add files in DIR to 'filetree-current-file-list'.
+(defun filetree-expand-dir (&optional dir regex recursive)
+  "Add files in DIR to `filetree-current-file-list'.
 If DIR is not specified, use dir at point.
-If FILTER is not specified, will 'read-char' from user.
-The corresponding regular expression in 'filetree-filetype-list' will
-be used to filter which files are included.  If FILTER does not
-correspond to an entry in 'filetree-filetype-list' the user is
-prompted for a string/regular expression to filter with."
-  (interactive)
+Only files matching regular expression REGEX are included.
+If REGEX is not specified prompt user for regular expression.
+If RECURSIVE is non-nil expand recursively."
   (let ((dir (or dir (filetree-get-name)))
-        (filetree-char-input (or filter (read-char)))
-        (my-filetree-mode-filter-list (mapcar (lambda (x)
-                                              (seq-subseq x 0 3))
-                                            filetree-filetype-list))
-        (filetree-new-files nil)
-        (my-filetree-regex nil)
-        (filetree-elem nil))
-    (while (/= (length my-filetree-mode-filter-list) 0)
-      (setq filetree-elem (car my-filetree-mode-filter-list))
-      (if (eq filetree-char-input (car filetree-elem))
-          (setq my-filetree-regex (nth 2 filetree-elem)))
-      (setq my-filetree-mode-filter-list (cdr my-filetree-mode-filter-list)))
-    (if (not my-filetree-regex)
-        (setq my-filetree-regex (read-string "Type a string: ")))
-    (setq filetree-new-files (delete nil (mapcar (lambda (x)
-                                                  (if (string-match
-                                                       my-filetree-regex
-                                                       (file-name-nondirectory (car x)))
-                                                      (if (null (nth 1 x))
-                                                          (car x)
-                                                        nil)))
-                                                (directory-files-and-attributes dir t))))
+        (regex (or regex
+                   (read-string "Type a regex: ")))
+        (filetree-new-files nil))
+    ;; search for relevant files
+    (setq filetree-new-files (if recursive
+                                 (directory-files-recursively dir regex nil t)
+                               (delete nil (mapcar (lambda (x)
+                                                     (if (string-match
+                                                          regex
+                                                          (file-name-nondirectory (car x)))
+                                                         (if (null (nth 1 x))
+                                                             (car x)
+                                                           nil)))
+                                                   (directory-files-and-attributes dir t)))))
+    ;; (directory-files dir t regex)))
+    ;; remove excluded files
     (dolist (entry filetree-exclude-list)
-                   (setq filetree-new-files (delete nil (mapcar (lambda (x)
-                                                                 (if (string-match
-                                                                      entry
-                                                                      x)
-                                                                     nil
-                                                                   x))
-                                                               filetree-new-files))))
+      (setq filetree-new-files (delete nil (mapcar (lambda (x)
+                                                     (if (string-match
+                                                          entry
+                                                          x)
+                                                         nil
+                                                       x))
+                                                   filetree-new-files))))
+    ;; filter out duplicates
     (setq filetree-current-file-list
           (-distinct (-non-nil
                       (nconc filetree-current-file-list
                              filetree-new-files)))))
   (filetree-update-buffer))
 
-(defun filetree-expand-dir-recursively (&optional dir filter)
-  "Recursively add files in DIR to 'filetree-current-file-list'.
-If DIR is not specified, use dir at point.
-If FILTER is not specified, will 'read-char' from user.  The corresponding
-regular expression in 'filetree-filetype-list' will be used to filter
-which files are included.  If FILTER does not correspond to an entry in
-'filetree-filetype-list' the user is prompted for a string/regular
-expression to filter with."
-  (interactive)
-  (let ((dir (or dir (filetree-get-name)))
-        (filetree-char-input (or filter (read-char)))
-        (my-filetree-mode-filter-list (mapcar (lambda (x)
-                                              (seq-subseq x 0 3))
-                                            filetree-filetype-list))
-        (my-filetree-regex nil)
-        (filetree-elem nil)
-        (filetree-new-files nil))
-    (while (/= (length my-filetree-mode-filter-list) 0)
-      (setq filetree-elem (car my-filetree-mode-filter-list))
-      (if (eq filetree-char-input (car filetree-elem))
-          (setq my-filetree-regex (nth 2 filetree-elem)))
-      (setq my-filetree-mode-filter-list (cdr my-filetree-mode-filter-list)))
-    (if (not my-filetree-regex)
-        (setq my-filetree-regex (read-string "Type a string: ")))
-    (setq filetree-new-files (directory-files-recursively dir my-filetree-regex nil t))
-    (dolist (entry filetree-exclude-list)
-      (setq filetree-new-files (delete nil (mapcar (lambda (x)
-                                                    (if (string-match entry x)
-                                                        nil
-                                                      x))
-                                                  filetree-new-files))))
-    (setq filetree-current-file-list (-distinct (-non-nil
-                                               (nconc filetree-current-file-list
-                                                      filetree-new-files)))))
-  (filetree-update-buffer))
-
 (defun filetree-run-dired ()
   "Run dired on directory at point."
   (interactive)
   (dired (filetree-get-name)))
+
+(defun filetree-run-magit ()
+  "Run magit on directory at point."
+  (interactive)
+  (if (fboundp 'magit-status)
+    (magit-status (file-name-directory (filetree-get-name)))
+    (error "Command magit-status not found")))
 
 (defun filetree-reduce-list-by-10 ()
   "Drop last 10 entries in `filetree-current-file-list'."
@@ -870,18 +999,27 @@ In other wrods go to prev branch of tree."
           (setq current-tree (cons new-entry current-tree)))))
   current-tree)
 
+(defun filetree-filter-file-list (filt-function)
+  "Filter `filetree-current-file-list' by FILT-FUNCTION."
+  (setq filetree-current-file-list (funcall filt-function filetree-current-file-list))
+  (filetree-update-buffer))
+
+(defun filetree-reverse-list ()
+  "Reverse files in `filetree-current-file-list'."
+  (interactive)
+  (setq filetree-current-file-list (reverse filetree-current-file-list))
+  (filetree-update-buffer))
+
 (defun filetree-print-flat (file-list)
   "Print FILE-LIST in flat format."
   (let ((first-file (car file-list))
-        (remaining (cdr file-list))
-        (draw-marks (> (length filetree-marked-file-list) 0)))
+        (remaining (cdr file-list)))
     (let ((filename (file-name-nondirectory first-file))
           (directory-name (file-name-directory first-file)))
       (insert (filetree-extra-file-info first-file))
-      (if draw-marks
-          (if (member first-file filetree-marked-file-list)
-              (insert filetree-symb-for-mark)
-            (insert " ")))    
+      (if (member first-file filetree-marked-file-list)
+          (insert filetree-symb-for-mark)
+        (insert " "))
       (if filetree-use-all-the-icons
           (insert (all-the-icons-icon-for-file filename) " "))
       (insert-text-button  filename
@@ -1436,6 +1574,9 @@ is empty use `filetree-current-file-list'"
                                        (list (helm-get-current-source)))))
   (filetree-update-buffer t))
 
+;; File list save/restore commands
+;; These are commands are used to save/restore filelists across sessiosn.
+;; ----------------------------------------------------------------------
 (defun filetree-select-file-list ()
   "Select file list from saved file lists."
   (interactive)
@@ -1507,7 +1648,10 @@ is empty use `filetree-current-file-list'"
                                                          nil x))
                                                    filetree-saved-lists)))
     (filetree-update-saved-lists-file)))
-    
+
+;; Show commands
+;; These are commands that are used to populate `filetree-current-file-list'.
+;; --------------------------------------------------------------------------
 (defun filetree-show-files (file-list)
   "Load FILE-LIST into current file list and show in tree mode."
   (setq filetree-current-file-list file-list)
@@ -1521,7 +1665,7 @@ is empty use `filetree-current-file-list'"
       (recentf-mode))
   (filetree-show-files recentf-list))
 
-(defun filetree-get-dired-dir ()
+(defun filetree--get-dired-dir ()
   "Get the directory name for the dired buffer.
 If current buffer not dired buffer, return nil."
   (interactive)
@@ -1532,7 +1676,7 @@ If current buffer not dired buffer, return nil."
           result))
     nil))
 
-(defun filetree-get-cur-dir ()
+(defun filetree--get-cur-dir ()
   "Get current directory using different methods based on buffer.
 Supported buffer types are:
 * file buffer
@@ -1540,14 +1684,16 @@ Supported buffer types are:
 * eshell buffer"
   (interactive)
   (let ((cur-buffer-dir
-         (if (equal major-mode 'dired-mode)
-             (filetree-get-dired-dir)
-           (if (and (equal major-mode 'eshell-mode)
-                    (fboundp 'eshell/pwd))
-               (eshell/pwd)
-             (if (buffer-file-name)
-                 (file-name-directory (buffer-file-name))
-               nil)))))
+         (cond
+          ;; dired buffer
+          ((equal major-mode 'dired-mode) (filetree--get-dired-dir))
+          ;; eshell buffer
+          ((and (equal major-mode 'eshell-mode)
+                (fboundp 'eshell/pwd)) (eshell/pwd))
+          ;; filetree buffer
+          ((equal (buffer-name) filetree-buffer-name) (filetree-get-name))
+          ;; file buffer
+          ((buffer-file-name) (file-name-directory (buffer-file-name))))))
     (if cur-buffer-dir
         cur-buffer-dir
       (error "Current buffer must be a file buffer, a dired buffer, or an eshell buffer"))))
@@ -1555,18 +1701,18 @@ Supported buffer types are:
 (defun filetree-show-cur-dir ()
   "Load files in current directory into current file list and show in tree mode."
   (interactive)
-  (let ((cur-buffer-dir (filetree-get-cur-dir)))
+  (let ((cur-buffer-dir (filetree--get-cur-dir)))
     (setq filetree-current-file-list nil)
     (setq filetree-file-list-stack (list filetree-current-file-list))
-    (filetree-expand-dir cur-buffer-dir 0)))
+    (filetree-expand-dir cur-buffer-dir "")))
 
 (defun filetree-show-cur-dir-recursively ()
   "Load files in current directory (recursively) into current file list and show in tree mode."
   (interactive)
-  (let ((cur-buffer-file (filetree-get-cur-dir)))
+  (let ((cur-buffer-file (filetree--get-cur-dir)))
     (setq filetree-current-file-list nil)
     (setq filetree-file-list-stack (list filetree-current-file-list))
-    (filetree-expand-dir-recursively cur-buffer-file 0)))
+    (filetree-expand-dir cur-buffer-file "" t)))
 
 (defun filetree-show-cur-buffers ()
   "Load file buffers in buffer list into current file list and show in tree mode."
@@ -1625,7 +1771,7 @@ Supported buffer types are:
             (progn
               (setq filetree-current-file-list nil)
               (setq filetree-file-list-stack (list filetree-current-file-list))
-              (filetree-expand-dir-recursively (expand-file-name root-dir) 0)
+              (filetree-expand-dir (expand-file-name root-dir) "" t)
               ;; filter for only files under vc and add to stack
               (if (fboundp 'vc-backend)
                   (progn
