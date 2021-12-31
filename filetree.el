@@ -564,7 +564,7 @@ entry of the list has the following:
    (mapcar (lambda (x)
              (car
               (transient--parse-child
-              'filetree-filter
+              'filetree-expand
               (list (car x)
                     (nth 1 x)
                     (lambda ()
@@ -595,7 +595,7 @@ TODO: combine with filetree-expand."
    (mapcar (lambda (x)
              (car
              (transient--parse-child
-              'filetree-filter
+              'filetree-expand-recursively
               (list (car x)
                     (nth 1 x)
                     (lambda ()
@@ -691,28 +691,30 @@ TODO: combine with filetree-expand."
     (define-key map "+" 'filetree-union-with-file-list-stack)
 
     ;; legacy key bindings
-    ;; (possibly remove)
-    ;; (define-key map "i" 'filetree-toggle-info-buffer)
-    ;; (define-key map "I" (lambda ()
-    ;;                       "Toggle filetree-info-buffer and switch to it if active"
-    ;;                       (interactive)
-    ;;                       (filetree-toggle-info-buffer t)))
-    ;; (define-key map "0" 'filetree-set-max-depth)
-    ;; (define-key map "1" 'filetree-set-max-depth-1)
-    ;; (define-key map "2" 'filetree-set-max-depth-2)
-    ;; (define-key map "3" 'filetree-set-max-depth-3)
-    ;; (define-key map "4" 'filetree-set-max-depth-4)
-    ;; (define-key map "5" 'filetree-set-max-depth-5)
-    ;; (define-key map "6" 'filetree-set-max-depth-6)
-    ;; (define-key map "7" 'filetree-set-max-depth-7)
-    ;; (define-key map "8" 'filetree-set-max-depth-8)
-    ;; (define-key map "9" 'filetree-set-max-depth-9)
-    ;; (define-key map "r" 'filetree-show-recentf-files)
-    ;; (define-key map "/" 'filetree-toggle-combine-dir-names)
-    ;; (define-key map "g" 'filetree-grep-marked-files)
-    ;; (define-key map "C" 'filetree-copy-marked-files-only)
-    ;; (define-key map "R" 'filetree-move-marked-files-only)
-    ;; (define-key map "d" 'filetree-run-dired)
+    ;; keeping some common key bindings for now to prevent disruption
+    ;; but will probably remove in the future
+    (define-key map "i" 'filetree-toggle-info-buffer)
+    (define-key map "I" (lambda ()
+                          "Toggle filetree-info-buffer and switch to it if active"
+                          (interactive)
+                          (filetree-toggle-info-buffer t)))
+    (define-key map "0" 'filetree-set-max-depth)
+    (define-key map "1" 'filetree-set-max-depth-1)
+    (define-key map "2" 'filetree-set-max-depth-2)
+    (define-key map "3" 'filetree-set-max-depth-3)
+    (define-key map "4" 'filetree-set-max-depth-4)
+    (define-key map "5" 'filetree-set-max-depth-5)
+    (define-key map "6" 'filetree-set-max-depth-6)
+    (define-key map "7" 'filetree-set-max-depth-7)
+    (define-key map "8" 'filetree-set-max-depth-8)
+    (define-key map "9" 'filetree-set-max-depth-9)
+    (define-key map "r" 'filetree-show-recentf-files)
+    (define-key map "/" 'filetree-toggle-combine-dir-names)
+    (define-key map "g" 'filetree-grep-marked-files)
+    (define-key map "C" 'filetree-copy-marked-files-only)
+    (define-key map "R" 'filetree-move-marked-files-only)
+    (define-key map "d" 'filetree-run-dired)
+    ;; comment out legacy file marking and file list loading key bindings 
     ;; (define-key map "o" 'filetree-open-marked-files)
     ;; (define-key map "K" 'filetree-kill-marked-buffers)
     ;; (define-key map "m" 'filetree-mark-item)
@@ -723,11 +725,11 @@ TODO: combine with filetree-expand."
     ;; (define-key map "L" 'filetree-select-file-list)
     ;; (define-key map "S" 'filetree-save-list)
     ;; (define-key map "D" 'filetree-delete-list)
-    ;; (define-key map "." 'filetree-toggle-flat-vs-tree)
-    ;; (define-key map "s" 'filetree-helm-filter)
-    ;; (define-key map ";" 'filetree-toggle-use-all-icons)
-    ;; (define-key map "]" 'filetree-increment-current-info-cycle)
-    ;; (define-key map "[" 'filetree-decrement-current-info-cycle)
+    (define-key map "." 'filetree-toggle-flat-vs-tree)
+    (define-key map "s" 'filetree-helm-filter)
+    (define-key map ";" 'filetree-toggle-use-all-icons)
+    (define-key map "]" 'filetree-increment-current-info-cycle)
+    (define-key map "[" 'filetree-decrement-current-info-cycle)
     map)
   "Keymap for filetree.")
 
