@@ -1,4 +1,5 @@
 # Filetree
+
 Filetree is a package that provides two basic functions:
 
 * **File tree viewer**
@@ -9,8 +10,13 @@ The file notes enable the user to write and display (org-mode) notes associated 
 
 ![filetree screenshot](screenshots/filetree_screenshot.jpg)
 
+# Getting Started
+Filetree is available on [MELPA](http://melpa.org/).
+
+Filetree now uses [transient](https://github.com/magit/transient) based hierarchical key bindings in order to both improve key binding scalability as well as to better facilitate feature discovery.   The command filetree-command-help will pull up the "Help Main Menu" transient (also available with the "h" key binding when in the filetree buffer).  The key bindings for all of the filetree commands can be found from this help window.
+
 # Demo Video
-A video demoing some of the primary functionality is on [Youtube here](https://youtu.be/-KrMaLq8Bms).  The corresponding notes are in this repo [demo_notes.org](demo_notes.org).
+A video demoing some of the primary functionality is on [Youtube here](https://youtu.be/-KrMaLq8Bms).  The corresponding notes are in this repo [demo_notes.org](demo_notes.org).  Note that this demo video is a bit out-of-date now, but does give an overview of some basic usages for the package.
 
 Here are links to sections of the video that cover specific topics.
 
@@ -69,8 +75,9 @@ Alternatives: [org-noter](https://github.com/weirdNox/org-noter) is an alternati
 
 # File tree Viewer
 
-## Starting and Exit Viewer
-The following commands start the viewer with the corresponding file list
+## Starting and Exit Viewe
+You can start the viewer either by pulling up the "Filetree Load Command Menu" (filetree-load-cmd-menu) and then selecting the desired file list, or you can directly run one of the commands below to load filetree with the corresponding file list.
+
 | Command                           | Comment                                                  |
 |-----------------------------------|----------------------------------------------------------|
 | filetree-select-file-list         | select file list from perviously saved lists             |
@@ -88,7 +95,8 @@ filetree-show-cur-dir and filetree-show-cur-dir-recursively can be called from a
 filetree-show-vc-dir-recursively can be called from a file buffer or a dired buffer (calling from an eshell buffer is not currently supported).  filetree-show-vc-dir-recursively first loads all files recursively in the version control root directory, puts that on the stack, then filters to only include files under version control and puts that on the stack.  So only the files under version control will be seen after running the command--to see all the files under the root directory after running the filetree-show-vc-dir-recursively command simply press "b" (filetree-pop-file-list-stack) to pop the current file list off the stack.
 
 Once one of the above commands is run to bring up the \*filetree\* buffer, pressing "h" (filetree-command-help) opens a transient window with the available commands.  The current version of filetree uses transient to build a hierarchical keymap for better management of key bindings as well as to facilitate better user discovery of features.
-[filetree help menu](screenshots/filetree-help-main-menu.jpg)
+
+![filetree help menu](screenshots/filetree-help-main-menu.jpg)
 
 Within the *Filetree* window the following navigation commands can be used
 | Command              | key map          | Comment         |
@@ -103,7 +111,7 @@ Within the *Filetree* window the following navigation commands can be used
 ![filetree demo views](screenshots/filetree_demo_views.gif)
 
 Pressing "v" (filetree-view-mode-menu) will pull up a menu of commands to configure the view mode.
-[filetree view mode menu](screenshots/filetree-view-mode-menu.jpg)
+![filetree view mode menu](screenshots/filetree-view-mode-menu.jpg)
 
 Alternatively, the following commands can also be used directly.
 | Command                               | key map | Comment                                    |
@@ -135,7 +143,7 @@ The filtering and expansion operations menus can be pulled up by the following k
 | --                          | RET     | Return on subdir, narrows to that subdir    |
 
 For example pressing "f" will pull up the following filter menu.
-[filetree filter menu](screenshots/filetree-filter-menu.jpg)
+![filetree filter menu](screenshots/filetree-filter-menu.jpg)
 This allows you to filter based on regex or interactively using a helm-based search.  You can also sort the list--note that the list is only sorted when viewed in flat view (see view mode).
 
 Notes:
@@ -208,7 +216,10 @@ One thing to keep in mind is that the note is referenced by it's absolute file n
 
 # Customizations
 
+Customizations to filetree can be made via emacs's customize command.  Some potentially useful customizations are discussed in the sections below.
+
 ## Files used by filetree
+The files used by filetree are grouped under the filetree-files custimization group.
 | Parameter                        | default                            | Comment                                        |
 |----------------------------------|------------------------------------|------------------------------------------------|
 | filetree-notes-file              | ~/.emacs.d/filetree-notes.org      | File used for file notes                       |
@@ -216,6 +227,7 @@ One thing to keep in mind is that the note is referenced by it's absolute file n
 | filetree-saved-lists-file        | ~/.emacs.d/filetree-saved-lists.el | File used for saved file lists                 |
 
 ## Settings related to startup state
+The configurations settings used at startup are grouped under the filetree-startup-prefs group.
 | Parameter                      | default | Comment                                                                       |
 |--------------------------------|---------|-------------------------------------------------------------------------------|
 | filetree-info-window           | nil     | Set to t to show notes/info side window at start                              |
@@ -229,35 +241,30 @@ Note enabling use-all-the-icons can make some of the operations sluggish if the 
 The variable filetree-show-remote-file-info is set to nil by default because determining file info (e.g., file size, mode, etc.) can be slow for remote file systems.
 
 ## Additional file info configuration
-The additional columns of information that can be shown on the left of the filetree are configurable.  Use M-x customize on the variable filetree-info-cycle-list for this configuration.  The screenshot below shows an example configuration.  
+The additional columns of information that can be shown on the left of the filetree are configurable.  Use M-x customize on the variable filetree-info-cycle-list for this configuration.  The screenshot below shows an example configuration.
 
 The sets of columns that are cycled through using "]" and "[" are called a view set.  Each view set has a set of columns and each column is specified by the column heading, the width of the column, the column justification (i.e., left/right/center), and a function that takes a filename/dirname as input and returns a string of information to display.  By writing your own functions (similar to functions like filetree-get-file-last-modified) and adding an entry with that function to filetree-info-cycle-list, you can show whatever information about a file you'd like on the left.
 
 ![filetree-info-cycle-list config](screenshots/filetree-customize-additional-columns.jpg)
 
-## Faces, marks, and misc
+## Filetype List
+The faces used for different file types as well as the shortcuts used to filter those file types are specified by the customization filetree-filetype-list.
+
+## Sort functions
+The available sort operations are specified under the customization filetree-sort-operation-list.  Each entry in the list provides a shortcut (under the filter transient), a label for the operation, and a function that updates filetree-current-file-list and then runs filetree-update-buffer to update the displayed filetree.
+
+## Misc
 The variable filetree-exclude-list is a list of regex for files to ignore.
 
 The marks used to draw the file trees can be customized.  Here is the list of symbols that are used:
 filetree-symb-for-root filetree-symb-for-box, filetree-symb-for-vertical-pipe, filetree-symb-for-horizontal-pipe, filetree-symb-for-left-elbow, filetree-symb-for-right-elbow, filetree-symb-for-branch-and-cont, filetree-symb-for-file-node.
 
-The faces used for different file types as well as the shortcuts used to filter those file types are specified using 'filetree-add-filetype.  The function that sets the default settings can be used as an example (see below).  The calls to filetree-add-filetype has the following arguments: file type name, shortcut, regex, face.  Note (setq filetree-filetype-list nil) clears any previous filetype entries in filetree-filetype-list.
-```
-(defun filetree-configure-default-filetypes ()
-  "Define default `filetree-filetype-list'.
-This defines filetype faces, filetype regex, and filter shortcuts.
-This function is given as an example.  The user can generate their own
-custom function with calls to `filetree-add-filetype'"
-  (interactive)
-  (setq filetree-filetype-list nil)
-  (filetree-add-filetype "No Filter" 0   ""        ())
-  (filetree-add-filetype "Python"    ?p  "\.py$"   '(:foreground "steel blue"))
-  (filetree-add-filetype "Org-mode"  ?o  "\.org$"  '(:foreground "DarkOliveGreen4"))
-  (filetree-add-filetype "elisp"     ?e  "\\(?:\\.e\\(?:l\\|macs\\)\\)"  '(:foreground "purple"))
-  (filetree-add-filetype "C"         ?c  "\\(?:\\.[ch]$\\|\\.cpp\\)"     '(:foreground "navyblue"))
-  (filetree-add-filetype "PDF"       ?d  "\.pdf$"  '(:foreground "maroon"))
-  (filetree-add-filetype "Matlab"    ?m  "\.m$"    '(:foreground "orange"))
-  (filetree-add-filetype "Text"      ?t  "\.txt$"  '(:foreground "gray50")))
-```
 The default face is specified by filetree-default-file-face.
 
+# Versions
+* v1.1
+ * Transient based hierarchical key bindings & help menus
+ * Improved flat view
+ * Sorting functionality (in flat view)
+ * Customization cleanup
+* v1.0x - Initial release 

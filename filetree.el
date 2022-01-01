@@ -81,26 +81,26 @@
 
 (defvar filetree-version "1.1")
 
-(defgroup filetree-configurations nil
-  "Filetree configurations."
-  :group 'filetree)
-
 (defconst filetree-buffer-name "*filetree*")
+
+(defgroup filetree-files nil
+  "Filenames/paths for files used by filetree."
+  :group 'filetree)
 
 (defcustom filetree-notes-file (concat user-emacs-directory
                                        "filetree-notes.org")
   "File used for file specific notes."
-  :group 'filetree-configurations  
+  :group 'filetree-files  
   :type 'file)
 (defcustom filetree-relative-notes-filename "filetree-notes-local.org"
   "Filename for file specific notes file with relative path."
-  :group 'filetree-configurations  
+  :group 'filetree-files
   :type 'string)
 
 (defcustom filetree-saved-lists-file (concat user-emacs-directory
                                              "filetree-saved-lists.el")
   "File used for saved file lists."
-  :group 'filetree-configurations  
+  :group 'filetree-files
   :type 'file)
 
 (defgroup filetree-startup-prefs nil
@@ -121,6 +121,9 @@ This can also be toggled using `filetree-toggle-info-buffer'."
   :group 'filetree-startup-prefs  
   :type 'boolean)
 
+(defgroup filetree-configurations nil
+  "Filetree configurations."
+  :group 'filetree)
 (defcustom filetree-enable-nonexistent-file-removal t
   "Set to t to check for and remove non-existent files during filetree updates."
   :group 'filetree-configurations  
@@ -308,20 +311,20 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
   :group 'filetree-faces)
 
 (defface filetree-elisp-face
-  '((((background dark)) (:foreground "yellow"))
-    (t                   (:foreground "purple")))
+  '((((background dark)) (:foreground "purple1"))
+    (t                   (:foreground "purple1")))
   "*Face used for elisp files in filetree."
   :group 'filetree-faces)
 
 (defface filetree-C-face
-  '((((background dark)) (:foreground "lightblue"))
-    (t                   (:foreground "navyblue")))
+  '((((background dark)) (:foreground "DeepSkyBlue1"))
+    (t                   (:foreground "DeepSkyBlue1")))
   "*Face used for C files in filetree."
   :group 'filetree-faces)
 
 (defface filetree-pdf-face
-  '((((background dark)) (:foreground "red"))
-    (t                   (:foreground "maroon")))
+  '((((background dark)) (:foreground "Magenta"))
+    (t                   (:foreground "Magenta")))
   "*Face used for pdf files in filetree."
   :group 'filetree-faces)
 
@@ -374,13 +377,7 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
 
 ;; transient menus
 ;; ---------------
-(defun filetree-command-help ()
-  "Wrapper for transient menu with key binding help for filetree."
-  (interactive)
-  (filetree-buffer-check)
-  (filetree--command-help))
-
-(transient-define-prefix filetree--command-help ()
+(transient-define-prefix filetree-command-help ()
   "Filetree Help"
   [:description (lambda ()
                   (filetree--transient-heading "Help Main Menu"
@@ -404,11 +401,12 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
    (mapcar (lambda (x)
              (car
              (transient--parse-child
-              'filetree--command-help
+              'filetree-command-help
               (append (list (car (where-is-internal
                                   (if (car x)
                                       (car x)
-                                    (nth 2 x)))))
+                                    (nth 2 x))
+                                  filetree-map)))
                       (cdr x)))))
            '((nil "View modes       - commands to change view" filetree-view-mode-menu)
              (nil "Load cmds        - commands to load filetree from different sources"
@@ -442,7 +440,7 @@ entry of the list has the following:
             (car
              (transient--parse-child
               'filetree-load-cmd-menu
-              (append (list (car (where-is-internal (nth 1 x))))
+              (append (list (car (where-is-internal (nth 1 x) filetree-map)))
                       x))))
           child-list))
   
@@ -468,7 +466,7 @@ entry of the list has the following:
    (filetree--setup-children '(("Quit filetree" filetree-close-session)
                                ("Remove item" filetree-remove-item :transient t)))
    (transient--parse-child
-    'filetree--command-help
+    'filetree-command-help
     '("<RET>" "open/narrow" filetree-open-or-narrow :transient t))))
 
 (transient-define-prefix filetree-view-mode-menu ()
