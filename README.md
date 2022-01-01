@@ -6,14 +6,16 @@ Filetree is a package that provides two basic functions:
 The viewer displays a file list as a directory tree in a special buffer.  The file list can be populated from any list of files.  There are functions to populate from a number of common sources: recentf, files in buffer-list, files in the current directory, and files found recursively in the current directory.  Within the viewer, the file list can be filtered, marked, and expanded in various ways and operations can be performed on the filtered file list (e.g., grep over files in list, open files in buffers, move files, copy files, run script on files, etc.).  Multiple file lists can be saved and retrieved between sessions.
 
 * **File notes**
-The file notes enable the user to write and display (org-mode) notes associated with individual files and directories.  The note can be displayed in a side buffer either when cycling through files in the file tree viewer or when the file is open in a buffer.  The notes are kept either in a single org-mode file with a heading for each file/directory, and/or in local project specfic org-mode files.
+The file notes enable the user to write and display (org-mode) notes associated with individual files and directories.  The note can be displayed in a side buffer either when cycling through files in the file tree viewer or when the file is open in a buffer.  The notes are kept either in a single org-mode file with a heading for each file/directory, and/or in local project specific org-mode files.
 
 ![filetree screenshot](screenshots/filetree_screenshot.jpg)
 
 # Getting Started
-Filetree is available on [MELPA](http://melpa.org/).
+Filetree is available on [MELPA](http://melpa.org/), and can be installed with package-install after MELPA is added to package-archives.
 
-Filetree now uses [transient](https://github.com/magit/transient) based hierarchical key bindings in order to both improve key binding scalability as well as to better facilitate feature discovery.   The command filetree-command-help will pull up the "Help Main Menu" transient (also available with the "h" key binding when in the filetree buffer).  The key bindings for all of the filetree commands can be found from this help window.
+Filetree now uses [transient](https://github.com/magit/transient) based hierarchical key bindings in order to both improve key binding scalability and organization, as well as to better facilitate feature discovery.   The command filetree-command-help will pull up the "Help Main Menu" transient (also available with the "h" key binding when in the filetree buffer).  The key bindings for filetree commands can be found from this help window.
+![filetree help menu](screenshots/filetree-help-main-menu.jpg)
+Pressing "l" from this menu (filetree-load-cmd-menu) will bring up a menu of sources for the filetree (e.g., recent files, files in current directory, current buffers, etc.).
 
 # Demo Video
 A video demoing some of the primary functionality is on [Youtube here](https://youtu.be/-KrMaLq8Bms).  The corresponding notes are in this repo [demo_notes.org](demo_notes.org).  Note that this demo video is a bit out-of-date now, but does give an overview of some basic usages for the package.
@@ -69,18 +71,72 @@ The filetree package can do some basic file system operations that are akin to o
 BTW if there's an operation that you would like to have in filetree, please file an issue and I'll try to add it.
 
 ## File notes use case 
-The file notes functionatity in filetree can be used as a light weight file-specific (org-mode) note taking tool.  With the integration with the rest of the filetree package, those notes can also be displayed while navigating the filetree.  What makes filetree's note functionality useful is that it's simple and there's very little overhead--a note for any file can be visited (or automatically created) with a single key binding, and the notes are centralized in a single global org file (or project specific org files if desired).
+The file notes functionality in filetree can be used as a light weight file-specific (org-mode) note taking tool.  With the integration with the rest of the filetree package, those notes can also be displayed while navigating the filetree.  What makes filetree's note functionality useful is that it's simple and there's very little overhead--a note for any file can be visited (or automatically created) with a single key binding, and the notes are centralized in a single global org file (or project specific org files if desired).
 
 Alternatives: [org-noter](https://github.com/weirdNox/org-noter) is an alternative package for taking notes associated with a file, and it can do some nice things like have notes sync'ed to your position in the document as you scroll.  For annotating a document this would be preferable to filetree.
 
 # File tree Viewer
 
-## Starting and Exit Viewe
-You can start the viewer either by pulling up the "Filetree Load Command Menu" (filetree-load-cmd-menu) and then selecting the desired file list, or you can directly run one of the commands below to load filetree with the corresponding file list.
+## Key bindings
+Filetree now uses transient to organize it's key bindings, though many legacy bindings have been kept for now to avoid disruption to users.  Key bindings and available commands can be explored using the "Help Main Menu" (filetree-command-help) tied to "h" in the filetree buffer.
+![filetree help menu](screenshots/filetree-help-main-menu.jpg)
 
+The transient key bindings are also listed below
+| Command                     | key | Comment                                                            |
+|-----------------------------|-----|--------------------------------------------------------------------|
+| filetree-command-help       | h   | Help Main Menu                                                     |
+| filetree-load-cmd-menu      | l   | Load filetree from different sources                               |
+| filetree-view-mode-menu     | v   | Change views (e.g., tree depth, flat vs. tree, icons, etc.)        |
+| filetree-file-ops-menu      | o   | Operations on single file/dir                                      |
+| filetree-mark-cmd-menu      | m   | Marking files and ops on marked files                              |
+| filetree-filter             | f   | Filtering and sorting operations                                   |
+| filetree-expand             | e   | Add/expand filelist operations                                     |
+| filetree-expand-recursively | E   | Add/expand filelist recursively TODO: combine with filetree-expand |
+
+Within the *Filetree* window the following navigation and basic commands can be used:
+| Command                | key              | Comment                       |
+|------------------------|------------------|-------------------------------|
+| filetree-next-line     | down, j          | down one line                 |
+| filetree-prev-line     | up, k            | up one line                   |
+| filetree-next-branch   | SPC              | down one branch               |
+| filetree-prev-branch   | TAB              | up one branch                 |
+| --                     | RETURN (on file) | open file                     |
+| --                     | RETRUN (on dir)  | narrow to dir                 |
+| filetree-remove-item   | x                | remove file/dir from filetree |
+| filetree-close-session | q                | exit filetree viewer          |
+
+The result after each filtering or expansion operations is put on a stack and can be undone by popping off the stack using the "b" key.  The current filetree can also be "subtracted" from the previous filelist on the stack using the "-" key--this can be useful to do a complementary filtering (e.g., keep all but the files matching a regex).
+
+| Command                             | key | Comment                                                                     |
+|-------------------------------------|---------|-----------------------------------------------------------------------------|
+| filetree-diff-with-file-list-stack  | -       | remove files in current file-list from list on stack and make new file-list |
+| filetree-union-with-file-list-stack | +       | combine files in current file-list and list on stack into new file-list     |
+| filetree-pop-file-list-stack        | b       | undo prev filter/expansion operation                                        |
+
+The following legacy key bindings (and the corresponding hierarchical key bindings) are shown below:
+| Command                               | legacy key | transient key | Comment                                            |
+|---------------------------------------|------------|---------------|----------------------------------------------------|
+| filetree-toggle-info-buffer           | i          | vi            |                                                    |
+| --                                    | I          | --            |                                                    |
+| filetree-set-max-depth                | 0-9        | v[0-9]        | set max depth of tree to view 0=max                |
+| filetree-toggle-combine-dir-names     | /          | v/            | toggle combining dir/subdirs in dir name           |
+| filetree-toggle-use-all-icons         | ;          | v;            | toggle use-all-icons icons (if installed)          |
+| filetree-toggle-flat-vs-tree          | .          | v.            | toggle between tree and flat view                  |
+| filetree-increment-current-info-cycle | ]          | v]            | cycle right through info views on the left         |
+| filetree-decrement-current-info-cycle | [          | v[            | cycle left through info views on the left          |
+| filetree-grep-marked-files            | g          | mg            | grep marked files (or all files if none are marked |
+| filetree-run-dired                    | d          | od            | dired on dir at point                              |
+| filetree-helm-filter                  | s          | fH            | run interactive helm-based filter                  |
+
+
+## Starting and Exit Viewer
+You can start the viewer either by pulling up the "Filetree Load Command Menu" (filetree-load-cmd-menu) and then selecting the desired file list
+![filetree load menu](screenshots/filetree-load-cmd-menu.jpg)
+
+Alternatively, you can directly run one of the commands below to load filetree with the corresponding file list.
 | Command                           | Comment                                                  |
 |-----------------------------------|----------------------------------------------------------|
-| filetree-select-file-list         | select file list from perviously saved lists             |
+| filetree-select-file-list         | select file list from previously saved lists             |
 | filetree-show-recentf-files       | populate files from recentf-list                         |
 | filetree-show-cur-dir             | populate files from current dir                          |
 | filetree-show-cur-dir-recursively | populate files from current dir (recursively)            |
@@ -96,17 +152,6 @@ filetree-show-vc-dir-recursively can be called from a file buffer or a dired buf
 
 Once one of the above commands is run to bring up the \*filetree\* buffer, pressing "h" (filetree-command-help) opens a transient window with the available commands.  The current version of filetree uses transient to build a hierarchical keymap for better management of key bindings as well as to facilitate better user discovery of features.
 
-![filetree help menu](screenshots/filetree-help-main-menu.jpg)
-
-Within the *Filetree* window the following navigation commands can be used
-| Command              | key map          | Comment         |
-|----------------------|------------------|-----------------|
-| filetree-next-line   | down, j          | down one line   |
-| filetree-prev-line   | up, k            | up one line     |
-| filetree-next-branch | SPC              | down one branch |
-| filetree-prev-branch | TAB              | up one branch   |
-| --                   | RETURN (on file) | open file       |
-
 ## View modes
 ![filetree demo views](screenshots/filetree_demo_views.gif)
 
@@ -114,24 +159,51 @@ Pressing "v" (filetree-view-mode-menu) will pull up a menu of commands to config
 ![filetree view mode menu](screenshots/filetree-view-mode-menu.jpg)
 
 Alternatively, the following commands can also be used directly.
-| Command                               | key map | Comment                                    |
-|---------------------------------------|---------|--------------------------------------------|
-| filetree-set-max-depth                | 0-9     | set max depth of tree to view 0=max        |
-| filetree-cycle-max-depth              | <none>  | cycle through max depth                    |
-| filetree-toggle-combine-dir-names     | /       | toggle combining dir/subdirs in dir name   |
-| filetree-toggle-use-all-icons         | ;       | toggle use-all-icons icons (if installed)  |
-| filetree-toggle-flat-vs-tree          | .       | toggle between tree and flat view          |
-| filetree-increment-current-info-cycle | ]       | cycle right through info views on the left |
-| filetree-decrement-current-info-cycle | [       | cycle left through info views on the left  |
+| Command                               | key    | Comment                                    |
+|---------------------------------------|--------|--------------------------------------------|
+| filetree-set-max-depth                | 0-9    | set max depth of tree to view 0=max        |
+| filetree-cycle-max-depth              | <none> | cycle through max depth                    |
+| filetree-toggle-combine-dir-names     | /      | toggle combining dir/subdirs in dir name   |
+| filetree-toggle-use-all-icons         | ;      | toggle use-all-icons icons (if installed)  |
+| filetree-toggle-flat-vs-tree          | .      | toggle between tree and flat view          |
+| filetree-increment-current-info-cycle | ]      | cycle right through info views on the left |
+| filetree-decrement-current-info-cycle | [      | cycle left through info views on the left  |
+
+## Operations on single files/directories
+Press the "o" key (filetree-file-ops-menu) to open operation menu.  The following commands are in the menu.
+
+| Command | key | Comment                                         |
+|---------|-----|-------------------------------------------------|
+| dired   | od   | opens a dired session at the directory at point |
+| magit   | og   | open magit on repo for file/dir at point        |
+
+## Marking files
+![filetree demo marking files](screenshots/filetree_demo_mark.gif)
+
+Pressing "m" (filetree-mark-cmd-menu) will pull up the mark command menu.
+![filetree mark cmd menu](screenshots/filetree-mark-menu.jpg)
+
+This enables marking of files followed by an operation on the marked files.  When files are marked, a small green arrow is shown to the left of the filetree indicating the file is marked.  The mark command menu persists through the marking commands, and exits either when the user selects an operation (e.g., "Select marked items") or when the user presses C-g to exit the menu.
+
+Note that marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one, building up the marked file list, and then perform an operations on all marked files.
+
+### Operations on marked files
+![filetree demo file operations](screenshots/filetree_demo_file_ops.gif)
+
+| Command                                        | key map | Comment                                         |
+|------------------------------------------------|---------|-------------------------------------------------|
+| filetree-grep-marked-files                     | mg       | grep over marked files                          |
+| filetree-kill-marked-buffers                   | mK       | kill all buffers associated with marked files   |
+| filetree-open-marked-files                     | mo       | Open buffer for all marked files                |
+| filetree-copy-marked-files-only                | mC       | copy all marked files to directory from user    |
+| filetree-move-marked-files-only                | mR       | move all marked files to directory from user    |
+| filetree-do-shell-command-on-marked-files-only | m!       | run shell command on marked files               |
+| filetree-delete-marked-files-only              | <None>  | delete all marked files                         |
+
+For filetree-grep-marked-files, filetree-kill-marked-buffers and filetree-open-marked-files, if no files are marked, the commands act on all files in the current file tree.
 
 ## Filtering and Expanding
 There are a number of ways to filter down the file list or to add files to the file list.  The results after each filtering or expansion operations is put on a stack and can be undone by popping off the stack using the "b" key.  The current filetree can also be "subtracted" from the previous filelist on the stack using the "-" key--this can be useful to do a complementary filtering (e.g., keep all but the files matching a regex).
-
-| Command                             | key map | Comment                                                                     |
-|-------------------------------------|---------|-----------------------------------------------------------------------------|
-| filetree-diff-with-file-list-stack  | -       | remove files in current file-list from list on stack and make new file-list |
-| filetree-union-with-file-list-stack | +       | combine files in current file-list and list on stack into new file-list     |
-| filetree-pop-file-list-stack        | b       | undo prev filter/expansion operation                                        |
 
 The filtering and expansion operations menus can be pulled up by the following keys/commands.
 
@@ -155,43 +227,6 @@ Notes:
 ### Helm-based filtering
 ![filetree demo views](screenshots/filetree_demo_helm_search.gif)
 
-## Marking files
-![filetree demo marking files](screenshots/filetree_demo_mark.gif)
-
-Pressing "m" (filetree-mark-cmd-menu) will pull up the mark command menu.
-![filetree mark cmd menu](screenshots/filetree-mark-menu.jpg)
-
-This enables marking of files followed by an operation on the marked files.  When files are marked, a small green arrow is shown to the left of the filetree indicating the file is marked.  Note that marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one.
-
-### Operations on marked files
-![filetree demo file operations](screenshots/filetree_demo_file_ops.gif)
-
-| Command                                        | key map | Comment                                         |
-|------------------------------------------------|---------|-------------------------------------------------|
-| filetree-grep-marked-files                     | g       | grep over marked files                          |
-| filetree-kill-marked-buffers                   | K       | kill all buffers associated with marked files   |
-| filetree-open-marked-files                     | o       | Open buffer for all marked files                |
-| filetree-copy-marked-files-only                | C       | copy all marked files to directory from user    |
-| filetree-move-marked-files-only                | R       | move all marked files to directory from user    |
-| filetree-do-shell-command-on-marked-files-only | !       | run shell command on marked files               |
-| filetree-delete-marked-files-only              | <None>  | delete all marked files                         |
-
-For filetree-grep-marked-files, filetree-kill-marked-buffers and filetree-open-marked-files, if no files are marked, the commands act on all files in the current file tree.
-
-## Operations on single files/directories
-Press the "o" key (filetree-file-ops-menu) to open operation menu.  The following commands are in the menu.
-
-| Command                                        | key map | Comment                                         |
-|------------------------------------------------|---------|-------------------------------------------------|
-| dired                                          | d       | opens a dired session at the directory at point |
-| magit                                          | g       | open magit on repo for file/dir at point        |
-
-
-## Load command menu
-Pressing "l" (filetree-load-cmd-menu) opens a menu to select different sources to populate the filetree.  This menu also provides commands to save and retrieve previously saved lists.
-
-![filetree load command menu](screenshots/filetree-load-cmd-menu.jpg)
-
 # File Notes
 This package maintains a notes file in the file specified by filetree-notes-file (default: ~/.emacs.d/filetree-notes.org).  This is an org-mode file that can hold notes associated with any file, and those notes can be seen in a side window as the user navigates through the file tree (see [File Notes section of demo video](https://youtu.be/-KrMaLq8Bms?t=1181))
 
@@ -212,19 +247,19 @@ Within the filetree buffer, the "i" key will toggle the side window with the not
 | filetree-toggle-info-buffer     | i       | Toggle info buffer in side window           |
 |                                 | I       | ^^ and then switch to side window if active |
 
-One thing to keep in mind is that the note is referenced by it's absolute file name/path in the case of a global file notes file, and referenced by the relative path and filename in the case of the project specific file notes.  As a result, if a file is moved or renamed, the correspondence between the note and the file will be lost.  This can be fixed by correcting the link in the notes file (or by creating a new entry for the file and cut-and-pasting the info to the new note).  Since the project specfic notes are relative, moving the whole project will not affect the notes.
+One thing to keep in mind is that the note is referenced by it's absolute file name/path in the case of a global file notes file, and referenced by the relative path and filename in the case of the project specific file notes.  As a result, if a file is moved or renamed, the correspondence between the note and the file will be lost.  This can be fixed by correcting the link in the notes file (or by creating a new entry for the file and cut-and-pasting the info to the new note).  Since the project specific notes are relative, moving the whole project will not affect the notes.
 
 # Customizations
 
 Customizations to filetree can be made via emacs's customize command.  Some potentially useful customizations are discussed in the sections below.
 
 ## Files used by filetree
-The files used by filetree are grouped under the filetree-files custimization group.
-| Parameter                        | default                            | Comment                                        |
-|----------------------------------|------------------------------------|------------------------------------------------|
-| filetree-notes-file              | ~/.emacs.d/filetree-notes.org      | File used for file notes                       |
-| filetree-relative-notes-filename | "filetree-notes-local.org"         | Filename used for project specific notes files |
-| filetree-saved-lists-file        | ~/.emacs.d/filetree-saved-lists.el | File used for saved file lists                 |
+The files used by filetree are grouped under the filetree-files customization group.
+| Parameter                        | default                                          | Comment                                        |
+|----------------------------------|--------------------------------------------------|------------------------------------------------|
+| filetree-notes-file              | user-emacs-directory + "filetree-notes.org"      | File used for file notes                       |
+| filetree-relative-notes-filename | "filetree-notes-local.org"                       | Filename used for project specific notes files |
+| filetree-saved-lists-file        | user-emacs-directory + "filetree-saved-lists.el" | File used for saved file lists                 |
 
 ## Settings related to startup state
 The configurations settings used at startup are grouped under the filetree-startup-prefs group.
@@ -263,8 +298,11 @@ The default face is specified by filetree-default-file-face.
 
 # Versions
 * v1.1
- * Transient based hierarchical key bindings & help menus
- * Improved flat view
- * Sorting functionality (in flat view)
- * Customization cleanup
+    * Transient based hierarchical key bindings & help menus (note some key bindings have changed)
+    * Improved flat view
+    * Sorting functionality (in flat view)
+    * Customization cleanup
 * v1.0x - Initial release 
+
+<!--  LocalWords:  Filetree
+ -->

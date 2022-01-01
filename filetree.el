@@ -375,6 +375,76 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
 (defvar filetree-current-info-cycle 0
   "This tracks the current state of file info on the left side of the window.")
 
+(defvar filetree-map
+  (let ((map (make-sparse-keymap)))
+    ;; transient menus
+    (define-key map "h" 'filetree-command-help)
+    (define-key map "v" 'filetree-view-mode-menu)
+    (define-key map "l" 'filetree-load-cmd-menu)
+    (define-key map "o" 'filetree-file-ops-menu)
+    (define-key map "m" 'filetree-mark-cmd-menu)
+    (define-key map "f" 'filetree-filter)
+    (define-key map "e" 'filetree-expand)
+    (define-key map "E" 'filetree-expand-recursively)
+    ;; navigation
+    (define-key map "j" 'filetree-next-line)
+    (define-key map "k" 'filetree-prev-line)
+    (define-key map (kbd "<down>") 'filetree-next-line)
+    (define-key map (kbd "<up>") 'filetree-prev-line)
+    (define-key map (kbd "SPC") 'filetree-next-branch)
+    (define-key map (kbd "TAB") 'filetree-prev-branch)
+    ;; basic commands
+    (define-key map "q" 'filetree-close-session)
+    (define-key map "x" 'filetree-remove-item)
+    (define-key map (kbd "<RET>") 'filetree-open-or-narrow)
+    ;; stack operations
+    (define-key map "b" 'filetree-pop-file-list-stack)
+    (define-key map "-" 'filetree-diff-with-file-list-stack)
+    (define-key map "+" 'filetree-union-with-file-list-stack)
+
+    ;; legacy key bindings
+    ;; keeping some common key bindings for now to prevent disruption
+    ;; but will probably remove in the future
+    (define-key map "i" 'filetree-toggle-info-buffer)
+    (define-key map "I" (lambda ()
+                          "Toggle filetree-info-buffer and switch to it if active"
+                          (interactive)
+                          (filetree-toggle-info-buffer t)))
+    (define-key map "0" 'filetree-set-max-depth)
+    (define-key map "1" 'filetree-set-max-depth-1)
+    (define-key map "2" 'filetree-set-max-depth-2)
+    (define-key map "3" 'filetree-set-max-depth-3)
+    (define-key map "4" 'filetree-set-max-depth-4)
+    (define-key map "5" 'filetree-set-max-depth-5)
+    (define-key map "6" 'filetree-set-max-depth-6)
+    (define-key map "7" 'filetree-set-max-depth-7)
+    (define-key map "8" 'filetree-set-max-depth-8)
+    (define-key map "9" 'filetree-set-max-depth-9)
+    ;; (define-key map "r" 'filetree-show-recentf-files)
+    (define-key map "/" 'filetree-toggle-combine-dir-names)
+    (define-key map "g" 'filetree-grep-marked-files)
+    ;; (define-key map "C" 'filetree-copy-marked-files-only)
+    ;; (define-key map "R" 'filetree-move-marked-files-only)
+    (define-key map "d" 'filetree-run-dired)
+    ;; comment out legacy file marking and file list loading key bindings 
+    ;; (define-key map "o" 'filetree-open-marked-files)
+    ;; (define-key map "K" 'filetree-kill-marked-buffers)
+    ;; (define-key map "m" 'filetree-mark-item)
+    ;; (define-key map "A" 'filetree-mark-all)
+    ;; (define-key map "M" 'filetree-select-marked-items)
+    ;; (define-key map "!" 'filetree-do-shell-command-on-marked-files-only)
+    ;; (define-key map "c" 'filetree-clear-marks)
+    ;; (define-key map "L" 'filetree-select-file-list)
+    ;; (define-key map "S" 'filetree-save-list)
+    ;; (define-key map "D" 'filetree-delete-list)
+    (define-key map "." 'filetree-toggle-flat-vs-tree)
+    (define-key map "s" 'filetree-helm-filter)
+    (define-key map ";" 'filetree-toggle-use-all-icons)
+    (define-key map "]" 'filetree-increment-current-info-cycle)
+    (define-key map "[" 'filetree-decrement-current-info-cycle)
+    map)
+  "Keymap for filetree.")
+
 ;; transient menus
 ;; ---------------
 (transient-define-prefix filetree-command-help ()
@@ -653,83 +723,13 @@ TODO: combine with filetree-expand."
     ("c" "Clear marks" filetree-clear-marks :transient t)]
   
    ["Operations on Marked Files"
-    ("M" "Selected marked items" filetree-select-marked-items)
+    ("M" "Select marked items" filetree-select-marked-items)
     ("g" "Grep marked files" filetree-grep-marked-files)
     ("C" "Copy marked files" filetree-copy-marked-files-only)
     ("R" "Move marked files" filetree-move-marked-files-only)
     ("o" "Open marked files" filetree-open-marked-files)
     ("K" "Kill marked buffers" filetree-kill-marked-buffers)
     ("!" "Shell cmd on marked" filetree-do-shell-command-on-marked-files-only)]])
-
-(defvar filetree-map
-  (let ((map (make-sparse-keymap)))
-    ;; transient menus
-    (define-key map "h" 'filetree-command-help)
-    (define-key map "v" 'filetree-view-mode-menu)
-    (define-key map "l" 'filetree-load-cmd-menu)
-    (define-key map "o" 'filetree-file-ops-menu)
-    (define-key map "m" 'filetree-mark-cmd-menu)
-    (define-key map "f" 'filetree-filter)
-    (define-key map "e" 'filetree-expand)
-    (define-key map "E" 'filetree-expand-recursively)
-    ;; navigation
-    (define-key map "j" 'filetree-next-line)
-    (define-key map "k" 'filetree-prev-line)
-    (define-key map (kbd "<down>") 'filetree-next-line)
-    (define-key map (kbd "<up>") 'filetree-prev-line)
-    (define-key map (kbd "SPC") 'filetree-next-branch)
-    (define-key map (kbd "TAB") 'filetree-prev-branch)
-    ;; basic commands
-    (define-key map "q" 'filetree-close-session)
-    (define-key map "x" 'filetree-remove-item)
-    (define-key map (kbd "<RET>") 'filetree-open-or-narrow)
-    ;; stack operations
-    (define-key map "b" 'filetree-pop-file-list-stack)
-    (define-key map "-" 'filetree-diff-with-file-list-stack)
-    (define-key map "+" 'filetree-union-with-file-list-stack)
-
-    ;; legacy key bindings
-    ;; keeping some common key bindings for now to prevent disruption
-    ;; but will probably remove in the future
-    (define-key map "i" 'filetree-toggle-info-buffer)
-    (define-key map "I" (lambda ()
-                          "Toggle filetree-info-buffer and switch to it if active"
-                          (interactive)
-                          (filetree-toggle-info-buffer t)))
-    (define-key map "0" 'filetree-set-max-depth)
-    (define-key map "1" 'filetree-set-max-depth-1)
-    (define-key map "2" 'filetree-set-max-depth-2)
-    (define-key map "3" 'filetree-set-max-depth-3)
-    (define-key map "4" 'filetree-set-max-depth-4)
-    (define-key map "5" 'filetree-set-max-depth-5)
-    (define-key map "6" 'filetree-set-max-depth-6)
-    (define-key map "7" 'filetree-set-max-depth-7)
-    (define-key map "8" 'filetree-set-max-depth-8)
-    (define-key map "9" 'filetree-set-max-depth-9)
-    (define-key map "r" 'filetree-show-recentf-files)
-    (define-key map "/" 'filetree-toggle-combine-dir-names)
-    (define-key map "g" 'filetree-grep-marked-files)
-    (define-key map "C" 'filetree-copy-marked-files-only)
-    (define-key map "R" 'filetree-move-marked-files-only)
-    (define-key map "d" 'filetree-run-dired)
-    ;; comment out legacy file marking and file list loading key bindings 
-    ;; (define-key map "o" 'filetree-open-marked-files)
-    ;; (define-key map "K" 'filetree-kill-marked-buffers)
-    ;; (define-key map "m" 'filetree-mark-item)
-    ;; (define-key map "A" 'filetree-mark-all)
-    ;; (define-key map "M" 'filetree-select-marked-items)
-    ;; (define-key map "!" 'filetree-do-shell-command-on-marked-files-only)
-    ;; (define-key map "c" 'filetree-clear-marks)
-    ;; (define-key map "L" 'filetree-select-file-list)
-    ;; (define-key map "S" 'filetree-save-list)
-    ;; (define-key map "D" 'filetree-delete-list)
-    (define-key map "." 'filetree-toggle-flat-vs-tree)
-    (define-key map "s" 'filetree-helm-filter)
-    (define-key map ";" 'filetree-toggle-use-all-icons)
-    (define-key map "]" 'filetree-increment-current-info-cycle)
-    (define-key map "[" 'filetree-decrement-current-info-cycle)
-    map)
-  "Keymap for filetree.")
 
 ;; functions
 (defun filetree-close-session ()
@@ -1578,14 +1578,14 @@ TODO: Break into smaller functions and clean-up."
     (insert filetree-symb-for-vertical-pipe " "
             (propertize "# files: " 'font-lock-face 'bold)
             (number-to-string (length filetree-current-file-list))
-            (propertize "\t\tMax depth: " 'font-lock-face 'bold)
+            (propertize "    Max depth: " 'font-lock-face 'bold)
             (if (> filetree-max-depth 0)
                 (number-to-string filetree-max-depth)
               "full")
-            "\t\t"
+            "    "
             (propertize "Stack size: " 'font-lock-face 'bold)
             (number-to-string (- (length filetree-file-list-stack) 1))
-            "\t\t"
+            "    "
             (if (> (length filetree-marked-file-list) 0)
                 (concat
                   (propertize "# Marked: " 'font-lock-face 'bold)
@@ -2001,12 +2001,20 @@ is empty use `filetree-current-file-list'"
       (recentf-mode))
   (filetree-show-files recentf-list))
 
+(defun filetree--get-dir (file-or-dir)
+  "Return directory of FILE-OR-DIR.
+Simply checks if FILE-OR-DIR ends in / to determine if 
+it's a directory."
+  (if (string= "/" (substring file-or-dir -1))
+      file-or-dir
+    (file-name-directory file-or-dir)))
+
 (defun filetree--get-dired-dir ()
   "Get the directory name for the dired buffer.
 If current buffer not dired buffer, return nil."
   (interactive)
   (if (equal major-mode 'dired-mode)
-      (let ((result dired-directory))
+      (let ((result (filetree--get-dir dired-directory)))
         (if (listp result)
             (car result)
           result))
@@ -2020,16 +2028,17 @@ Supported buffer types are:
 * eshell buffer"
   (interactive)
   (let ((cur-buffer-dir
-         (cond
-          ;; dired buffer
-          ((equal major-mode 'dired-mode) (filetree--get-dired-dir))
-          ;; eshell buffer
-          ((and (equal major-mode 'eshell-mode)
-                (fboundp 'eshell/pwd)) (eshell/pwd))
-          ;; filetree buffer
-          ((equal (buffer-name) filetree-buffer-name) (filetree-get-name))
-          ;; file buffer
-          ((buffer-file-name) (file-name-directory (buffer-file-name))))))
+         (expand-file-name
+          (cond
+           ;; dired buffer
+           ((equal major-mode 'dired-mode) (filetree--get-dired-dir))
+           ;; eshell buffer
+           ((and (equal major-mode 'eshell-mode)
+                 (fboundp 'eshell/pwd)) (eshell/pwd))
+           ;; filetree buffer
+           ((equal (buffer-name) filetree-buffer-name) (filetree-get-name))
+           ;; file buffer
+           ((buffer-file-name) (file-name-directory (buffer-file-name)))))))
     (if cur-buffer-dir
         cur-buffer-dir
       (error "Current buffer must be a file buffer, a dired buffer, or an eshell buffer"))))
@@ -2045,10 +2054,10 @@ Supported buffer types are:
 (defun filetree-show-cur-dir-recursively ()
   "Load files in current directory (recursively) into current file list and show in tree mode."
   (interactive)
-  (let ((cur-buffer-file (filetree--get-cur-dir)))
+  (let ((cur-buffer-dir (filetree--get-cur-dir)))
     (setq filetree-current-file-list nil)
     (setq filetree-file-list-stack (list filetree-current-file-list))
-    (filetree-expand-dir cur-buffer-file "" t)))
+    (filetree-expand-dir cur-buffer-dir "" t)))
 
 (defun filetree-show-cur-buffers ()
   "Load file buffers in buffer list into current file list and show in tree mode."
