@@ -15,7 +15,8 @@ Filetree is available on [MELPA](http://melpa.org/), and can be installed with p
 
 Filetree now uses [transient](https://github.com/magit/transient) based hierarchical key bindings in order to both improve key binding scalability and organization, as well as to better facilitate feature discovery.   The command filetree-command-help will pull up the "Help Main Menu" transient (also available with the "h" key binding when in the filetree buffer).  The key bindings for filetree commands can be found from this help window.
 ![filetree help menu](screenshots/filetree-help-main-menu.jpg)
-Pressing "l" from this menu (filetree-load-cmd-menu) will bring up a menu of sources for the filetree (e.g., recent files, files in current directory, current buffers, etc.).
+Pressing "l" from this menu (or directly calling filetree-load-cmd-menu) will bring up a menu of sources for the filetree (e.g., recent files, files in current directory, current buffers, etc.).
+![filetree load menu](screenshots/filetree-load-cmd-menu.jpg)
 
 # Demo Video
 A video demoing some of the primary functionality is on [Youtube here](https://youtu.be/-KrMaLq8Bms).  The corresponding notes are in this repo [demo_notes.org](demo_notes.org).  Note that this demo video is a bit out-of-date now, but does give an overview of some basic usages for the package.
@@ -130,7 +131,7 @@ The following legacy key bindings (and the corresponding hierarchical key bindin
 
 
 ## Starting and Exit Viewer
-You can start the viewer either by pulling up the "Filetree Load Command Menu" (filetree-load-cmd-menu) and then selecting the desired file list
+You can start the viewer by pulling up the "Filetree Load Command Menu" (filetree-load-cmd-menu) and then selecting the desired file list
 ![filetree load menu](screenshots/filetree-load-cmd-menu.jpg)
 
 Alternatively, you can directly run one of the commands below to load filetree with the corresponding file list.
@@ -150,7 +151,7 @@ filetree-show-cur-dir and filetree-show-cur-dir-recursively can be called from a
 
 filetree-show-vc-dir-recursively can be called from a file buffer or a dired buffer (calling from an eshell buffer is not currently supported).  filetree-show-vc-dir-recursively first loads all files recursively in the version control root directory, puts that on the stack, then filters to only include files under version control and puts that on the stack.  So only the files under version control will be seen after running the command--to see all the files under the root directory after running the filetree-show-vc-dir-recursively command simply press "b" (filetree-pop-file-list-stack) to pop the current file list off the stack.
 
-Once one of the above commands is run to bring up the \*filetree\* buffer, pressing "h" (filetree-command-help) opens a transient window with the available commands.  The current version of filetree uses transient to build a hierarchical keymap for better management of key bindings as well as to facilitate better user discovery of features.
+Once one of the above commands is run to bring up the \*filetree\* buffer, pressing "h" (filetree-command-help) opens a transient window with the available commands.  
 
 ## View modes
 ![filetree demo views](screenshots/filetree_demo_views.gif)
@@ -178,8 +179,6 @@ Press the "o" key (filetree-file-ops-menu) to open operation menu.  The followin
 | magit   | og   | open magit on repo for file/dir at point        |
 
 ## Marking files
-![filetree demo marking files](screenshots/filetree_demo_mark.gif)
-
 Pressing "m" (filetree-mark-cmd-menu) will pull up the mark command menu.
 ![filetree mark cmd menu](screenshots/filetree-mark-menu.jpg)
 
@@ -188,7 +187,6 @@ This enables marking of files followed by an operation on the marked files.  Whe
 Note that marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one, building up the marked file list, and then perform an operations on all marked files.
 
 ### Operations on marked files
-![filetree demo file operations](screenshots/filetree_demo_file_ops.gif)
 
 | Command                                        | key map | Comment                                         |
 |------------------------------------------------|---------|-------------------------------------------------|
@@ -220,12 +218,6 @@ This allows you to filter based on regex or interactively using a helm-based sea
 
 Notes:
 * The filetree-toggle-combined-dir-names command (see in View mode section below) can be helpful when wanted to use filetree-expand (or filetree-expand-dir-recursively) on a directory one or more levels above a file in the file list.
-
-### Regex based filtering
-![filetree demo filtering](screenshots/filetree_demo_filtering.gif)
-
-### Helm-based filtering
-![filetree demo views](screenshots/filetree_demo_helm_search.gif)
 
 # File Notes
 This package maintains a notes file in the file specified by filetree-notes-file (default: ~/.emacs.d/filetree-notes.org).  This is an org-mode file that can hold notes associated with any file, and those notes can be seen in a side window as the user navigates through the file tree (see [File Notes section of demo video](https://youtu.be/-KrMaLq8Bms?t=1181))
