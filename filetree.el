@@ -61,8 +61,8 @@
 (require 'xref)
 (require 'helm)
 (require 'seq)
-(require 'vc)
-(require 'dired-aux)
+;;(require 'vc)
+;;(require 'dired-aux)
 (require 'face-remap)
 (require 'transient)
 ;;(require 'cl-lib)
@@ -90,7 +90,7 @@
 (defcustom filetree-notes-file (concat user-emacs-directory
                                        "filetree-notes.org")
   "File used for file specific notes."
-  :group 'filetree-files  
+  :group 'filetree-files
   :type 'file)
 (defcustom filetree-relative-notes-filename "filetree-notes-local.org"
   "Filename for file specific notes file with relative path."
@@ -109,16 +109,16 @@
 (defcustom filetree-use-all-the-icons nil
   "Set to t to use file and directory icons.
 This can also be toggled using `filetree-toggle-use-all-icons'."
-  :group 'filetree-startup-prefs  
+  :group 'filetree-startup-prefs
   :type 'boolean)
 (defcustom filetree-info-window nil
   "Set to t to show info in side window.
 This can also be toggled using `filetree-toggle-info-buffer'."
-  :group 'filetree-startup-prefs  
+  :group 'filetree-startup-prefs
   :type 'boolean)
 (defcustom filetree-show-remote-file-info nil
   "Set to t to show additional file info for remote files as well."
-  :group 'filetree-startup-prefs  
+  :group 'filetree-startup-prefs
   :type 'boolean)
 
 (defgroup filetree-configurations nil
@@ -126,16 +126,16 @@ This can also be toggled using `filetree-toggle-info-buffer'."
   :group 'filetree)
 (defcustom filetree-enable-nonexistent-file-removal t
   "Set to t to check for and remove non-existent files during filetree updates."
-  :group 'filetree-configurations  
+  :group 'filetree-configurations
   :type 'boolean)
 (defcustom filetree-exclude-list
   '("~$" "#$" ".git\/" ".gitignore$" "\/\.\/$" "\/\.\.\/$" ".DS_Store$")
   "List of regex for files to exclude from file list."
-  :group 'filetree-configurations  
+  :group 'filetree-configurations
   :type '(repeat regexp))
 (defcustom filetree-helm-candidate-number-limit 10000
   "Maximum number of candidates to show in tree when using helm-based filtering."
-  :group 'filetree-configurations  
+  :group 'filetree-configurations
   :type 'integer)
 (defcustom filetree-info-cycle-list
   '(;; cycle 0 - no info
@@ -166,7 +166,7 @@ list has the following entries:
   string to show
 - string with justification to use for the column contents
   (left, right, center), default is left."
-  :group 'filetree-configurations  
+  :group 'filetree-configurations
   :type '(repeat (repeat :tag "View Set"
                          (list :tag "Column"
                                (string :tag "Heading")
@@ -192,7 +192,7 @@ Each entry of this list is itself a list with the following entries:
 - label for filetype
 - regex for filetype
   syntax highlighting to use for filetype"
-  :group 'filetree-configurations  
+  :group 'filetree-configurations
   :type '(repeat
           (list :tag "Filetype"
                 (string :tag "shortcut")
@@ -200,18 +200,49 @@ Each entry of this list is itself a list with the following entries:
                 (regexp :tag "Regexp")
                 (face :tag "Face"))))
 
-(defcustom filetree-sort-operation-list
-  '(("ss" "File size" filetree-sort-by-file-size)
-    ("sd" "Last Modification Date" filetree-sort-by-last-modified)
-    ("sr" "Reverse list" filetree-reverse-list))
-  "List of file sorting functions when displaying file list as flat list.
+(defcustom filetree-custom-filelist-operations
+  '(("ss" "Sort by File size" filetree-sort-by-file-size)
+    ("sd" "Sort by Last Mod Date" filetree-sort-by-last-modified)
+    ("sr" "Reverse list" reverse))
+  "List of custom operations acting on file list.
 Each entry has:
+- keyboard shortcut under the filter menu
 - label string
-- function that takes two files as input, it should return t if relative
-  order is first then second, and nil otherwise."
-  :group 'filetree-configurations  
+- function taking a file list as input and returning updated file list"
+  :group 'filetree-configurations
   :type '(repeat
-          (list :tag "Sort Operation"
+          (list :tag "Operation"
+                (string :tag "shortcut")
+                (string :tag "Label")
+                function)))
+
+(defcustom filetree-custom-single-operations
+  '(("d" "open dired on dir at point" dired)
+    ("e" "open eshell in dir at point" filetree-run-eshell)
+    ("ms" "magit-status on repo at point" filetree-run-magit-status))
+  "List of custom operations acting on file/dir at point.
+Each entry has:
+- keyboard shortcut under the file operation menu
+- label string
+- function taking a file/dir as input"
+  :group 'filetree-configurations
+  :type '(repeat
+          (list :tag "Operation"
+                (string :tag "shortcut")
+                (string :tag "Label")
+                function)))
+
+(defcustom filetree-custom-marked-file-operations
+  '(("!" "Shell cmd on marked" filetree-do-shell-command-on-files)
+    ("t" "file contents->buffer" filetree-contents-to-buffer))
+  "List of custom operations acting on marked files.
+Each entry has:
+- keyboard shortcut under the mark command menu
+- label string
+- function taking a file list as input"
+  :group 'filetree-configurations
+  :type '(repeat
+          (list :tag "Operation"
                 (string :tag "shortcut")
                 (string :tag "Label")
                 function)))
@@ -323,8 +354,8 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
   :group 'filetree-faces)
 
 (defface filetree-pdf-face
-  '((((background dark)) (:foreground "Magenta"))
-    (t                   (:foreground "Magenta")))
+  '((((background dark)) (:foreground "orange red"))
+    (t                   (:foreground "orange red")))
   "*Face used for pdf files in filetree."
   :group 'filetree-faces)
 
@@ -425,8 +456,8 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
     (define-key map "g" 'filetree-grep-marked-files)
     ;; (define-key map "C" 'filetree-copy-marked-files-only)
     ;; (define-key map "R" 'filetree-move-marked-files-only)
-    (define-key map "d" 'filetree-run-dired)
-    ;; comment out legacy file marking and file list loading key bindings 
+    ;; (define-key map "d" 'filetree-run-dired)
+    ;; comment out legacy file marking and file list loading key bindings
     ;; (define-key map "o" 'filetree-open-marked-files)
     ;; (define-key map "K" 'filetree-kill-marked-buffers)
     ;; (define-key map "m" 'filetree-mark-item)
@@ -450,7 +481,7 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
 (transient-define-prefix filetree-command-help ()
   "Filetree Help"
   [:description (lambda ()
-                  (filetree--transient-heading "Help Main Menu"
+                  (filetree--transient-heading "Filetree Help Main Menu"
                                                "Filetree keybinding help menu."))
    [:description (lambda ()
                    (concat (propertize
@@ -542,52 +573,51 @@ entry of the list has the following:
 (transient-define-prefix filetree-view-mode-menu ()
   "Transient for view modes"
   [:description (lambda ()
-                  (filetree--transient-heading "View Modes Menu"
+                  (filetree--transient-heading "Filetree View Modes Menu"
                                                "Commands to change the view mode."))
-   ["Navigation" :pad-keys
-    ""
-    :setup-children filetree--navigation-menu-setup-children]]
-  [["View mode toggles"
-    ("/" "Toggle Combine Dirname" filetree-toggle-combine-dir-names)
-    ("." "Toggle tree/flat view" filetree-toggle-flat-vs-tree)
-    ("i" "Toggle info buffer" filetree-toggle-info-buffer)
-    (";" "Toggle icons" filetree-toggle-use-all-icons)]
-   ["Extra info controls"
-    ("]" "Cycle+ extra info" filetree-increment-current-info-cycle)
-    ("[" "Cycle- extra info" filetree-decrement-current-info-cycle)]
-   ["Depth controls"
-    ("0" "Full depth" filetree-set-max-depth)
-    ("1" "Depth 1" filetree-set-max-depth-1)
-    ("2" "Depth 2" filetree-set-max-depth-2)
-    ("3" "Depth 3" filetree-set-max-depth-3)
-    ("4" "Depth 4" filetree-set-max-depth-4)]
-   [""
-    ("5" "Depth 5" filetree-set-max-depth-5)
-    ("6" "Depth 6" filetree-set-max-depth-6)
-    ("7" "Depth 7" filetree-set-max-depth-7)
-    ("8" "Depth 8" filetree-set-max-depth-8)
-    ("9" "Depth 9" filetree-set-max-depth-9)]])
+                ["View mode toggles"
+                 ("/" "Toggle Combine Dirname" filetree-toggle-combine-dir-names)
+                 ("." "Toggle tree/flat view" filetree-toggle-flat-vs-tree)
+                 ("i" "Toggle info buffer" filetree-toggle-info-buffer)
+                 (";" "Toggle icons" filetree-toggle-use-all-icons)]
+                ["Extra info controls"
+                 ("]" "Cycle+ extra info" filetree-increment-current-info-cycle)
+                 ("[" "Cycle- extra info" filetree-decrement-current-info-cycle)]
+                ["Depth controls"
+                 ("0" "Full depth" filetree-set-max-depth)
+                 ("1" "Depth 1" filetree-set-max-depth-1)
+                 ("2" "Depth 2" filetree-set-max-depth-2)
+                 ("3" "Depth 3" filetree-set-max-depth-3)
+                 ("4" "Depth 4" filetree-set-max-depth-4)]
+                [""
+                 ("5" "Depth 5" filetree-set-max-depth-5)
+                 ("6" "Depth 6" filetree-set-max-depth-6)
+                 ("7" "Depth 7" filetree-set-max-depth-7)
+                 ("8" "Depth 8" filetree-set-max-depth-8)
+                 ("9" "Depth 9" filetree-set-max-depth-9)]]
+  [["Basic Actions" :pad-keys ""
+    :setup-children filetree--basic-cmd-menu-setup-children]
+   ["Navigation" :pad-keys ""
+    :setup-children filetree--navigation-menu-setup-children]])
 
 (transient-define-prefix filetree-filter ()
   "Filter by regex commands"
   [:description (lambda ()
-                  (filetree--transient-heading "Filter Menu"
+                  (filetree--transient-heading "Filetree Filter Menu"
                                                "Commands to filter the filetree list."))
-   ["Navigation" :pad-keys
-    ""
-    :setup-children filetree--navigation-menu-setup-children]
-   ["Stack Commands" :pad-keys
-   ""
-   :setup-children filetree--stack-menu-setup-children]]
 
-   [["Regex filters"
-    :setup-children filetree--filter-regex-setup-children]
-   [""
-    ("<RET>" "Custom" (lambda () (interactive) (filetree-filter-by-regex nil)))]
-   ["Other Filters"
-    ("H" "Helm-based filter" filetree-helm-filter)]
-   ["Sort functions"
-    :setup-children filetree--filter-sort-setup-children]])
+                ["Regex filters"
+                 :setup-children filetree--filter-regex-setup-children]
+                [""
+                 ("<RET>" "Custom" (lambda () (interactive) (filetree-filter-by-regex nil)))]
+                ["Other Filters"
+                 ("H" "Helm-based filter" filetree-helm-filter)]
+                ["Custom functions"
+                 :setup-children filetree--filter-custom-setup-children]]
+  [["Navigation" :pad-keys ""
+    :setup-children filetree--navigation-menu-setup-children]
+   ["Stack Commands" :pad-keys ""
+    :setup-children filetree--stack-menu-setup-children]])
 
 (defun filetree--filter-regex-setup-children (_)
   "Setup regex filter functions."
@@ -602,30 +632,32 @@ entry of the list has the following:
                       (filetree-filter-by-regex (nth 2 x)))))))
            filetree-filetype-list))
 
-(defun filetree--filter-sort-setup-children (_)
-  "Setup regex filter functions."
+(defun filetree--filter-custom-setup-children (_)
+  "Setup custom filter functions."
    (mapcar (lambda (x)
              (car
              (transient--parse-child
               'filetree-filter
-              x)))
-           filetree-sort-operation-list))
+              (list (car x)
+                    (nth 1 x)
+                    (lambda ()
+                      (interactive)
+                      (filetree--run-custom-function (nth 2 x)))))))
+           filetree-custom-filelist-operations))
 
 (transient-define-prefix filetree-expand ()
   "Expand/Add to file list"
   [:description (lambda ()
-                  (filetree--transient-heading "Expand Menu"
+                  (filetree--transient-heading "Filetree Expand Menu"
                                                "Commands to expand the filetree list."))
-   ["Navigation" :pad-keys
-    ""
+                ["Regex filters"
+                 :setup-children filetree--expand-setup-children]
+                [""
+                 ("<RET>" "Custom" (lambda () (interactive) (filetree-expand-dir nil nil)))]]
+  [["Navigation" :pad-keys ""
     :setup-children filetree--navigation-menu-setup-children]
-   ["Stack Commands" :pad-keys
-   ""
-   :setup-children filetree--stack-menu-setup-children]]
-   [["Regex filters"
-    :setup-children filetree--expand-setup-children]
-   [""
-    ("<RET>" "Custom" (lambda () (interactive) (filetree-expand-dir nil nil)))]])
+   ["Stack Commands" :pad-keys ""
+    :setup-children filetree--stack-menu-setup-children]])
 
 (defun filetree--expand-setup-children (_)
   "Setup regex expansion functions."
@@ -644,19 +676,18 @@ entry of the list has the following:
   "Expand/Add to file list recursively.
 TODO: combine with filetree-expand."
   [:description (lambda ()
-                  (filetree--transient-heading "Expand Menu"
+                  (filetree--transient-heading "Filetree Expand Recursively Menu"
                                                "Commands to expand the filetree list."))
-   ["Navigation" :pad-keys
-    ""
+                ["Regex filters"
+                 :setup-children filetree--expand-recursive-setup-children]
+                [""
+                 ("<RET>" "Custom" (lambda () (interactive)
+                                     (filetree-expand-dir nil nil t)))]]
+  [["Navigation" :pad-keys ""
     :setup-children filetree--navigation-menu-setup-children]
    ["Stack Commands" :pad-keys
-   ""
-   :setup-children filetree--stack-menu-setup-children]]
-  [["Regex filters"
-    :setup-children filetree--expand-recursive-setup-children]
-   [""
-    ("<RET>" "Custom" (lambda () (interactive)
-                        (filetree-expand-dir nil nil t)))]])
+    ""
+    :setup-children filetree--stack-menu-setup-children]])
 
 (defun filetree--expand-recursive-setup-children (_)
   "TODO: combine with filetree--expand-setup-children."
@@ -676,60 +707,93 @@ TODO: combine with filetree-expand."
   [:description (lambda ()
                   (filetree--transient-heading "Filetree Load Command Menu"
                                                "Commands to load file list from different sources."))
-                ["Navigation" :pad-keys
-                 ""
-                 :setup-children filetree--navigation-menu-setup-children]
-                ["Stack Commands" :pad-keys
-                 ""
-                 :setup-children filetree--stack-menu-setup-children]]
-  [["Show commands"
-    ("r" "Recent files" filetree-show-recentf-files)
-    ("c" "Current Dir" filetree-show-cur-dir)
-    ("C" "Current Dir (recursive)" filetree-show-cur-dir-recursively)
-    ("B" "Current Buffers" filetree-show-cur-buffers)
-    ("v" "VC Root Dir (recursive)" filetree-show-vc-root-dir-recursively)
-    ("n" "Files with Notes" filetree-show-files-with-notes)]
-   ["File List"
-   ("L" "Select file list" filetree-select-file-list)
-   ("S" "Save file list" filetree-save-list)
-   ("D" "Delete file list" filetree-delete-list)]])
+                ["Load commands"
+                 ("r" "Recent files       filetree-show-recentf-files" filetree-show-recentf-files)
+                 ("c" "Current Dir        filetree-show-cur-dir" filetree-show-cur-dir)
+                 ("C" "Current Dir recurs filetree-show-cur-dir-recursively" filetree-show-cur-dir-recursively)
+                 ("B" "Current Buffers    filetree-show-cur-buffers" filetree-show-cur-buffers)
+                 ("v" "VC Root Dir        filetree-show-vc-root-dir-recursively" filetree-show-vc-root-dir-recursively)
+                 ("n" "Files with Notes   filetree-show-files-with-notes" filetree-show-files-with-notes)]
+                ["Saved File List"
+                 ("L" "Load saved file list" filetree-select-file-list)
+                 ("S" "Save new file list" filetree-save-list)
+                 ("D" "Delete file list" filetree-delete-list)]]
+  [["Basic Actions" :pad-keys ""
+    :setup-children filetree--basic-cmd-menu-setup-children]
+   ["Navigation" :pad-keys ""
+    :setup-children filetree--navigation-menu-setup-children]
+   ["Stack Commands" :pad-keys ""
+    :setup-children filetree--stack-menu-setup-children]])
+
+(defun filetree--ops-custom-setup-children (_)
+  "Setup custom filter functions."
+   (mapcar (lambda (x)
+             (car
+             (transient--parse-child
+              'filetree-file-ops-menu
+              (list (car x)
+                    (nth 1 x)
+                    (lambda ()
+                      (interactive)
+                      (filetree--run-custom-single-op (nth 2 x)))))))
+           filetree-custom-single-operations))
 
 (transient-define-prefix filetree-file-ops-menu ()
   "Transient for operations on file/dir at point."
   [:description (lambda ()
                   (filetree--transient-heading "Filetree File Operations Menu"
                                                "Commands acting on file/dir at point."))
-                ["Navigation" :pad-keys
+                ["Operations" :pad-keys
                  ""
-                 :setup-children filetree--navigation-menu-setup-children]
-                ["Stack Commands" :pad-keys
-                 ""
-                 :setup-children filetree--stack-menu-setup-children]]
-  [["Show commands"
-    ("d" "Dired - open dired on dir at point" filetree-run-dired)
-    ("g" "Magit - open magit on repo at point" filetree-run-magit)]])
+                 :setup-children filetree--ops-custom-setup-children]]
+  [["Basic Actions" :pad-keys ""
+    :setup-children filetree--basic-cmd-menu-setup-children]
+   ["Navigation" :pad-keys ""
+    :setup-children filetree--navigation-menu-setup-children]
+   ["Stack Commands" :pad-keys ""
+    :setup-children filetree--stack-menu-setup-children]])
+
+(defun filetree--marked-ops-custom-setup-children (_)
+  "Setup custom filter functions."
+   (mapcar (lambda (x)
+             (car
+             (transient--parse-child
+              'filetree-file-ops-menu
+              (list (car x)
+                    (nth 1 x)
+                    (lambda ()
+                      (interactive)
+                      (funcall (nth 2 x) filetree-marked-file-list))))))
+           filetree-custom-marked-file-operations))
 
 (transient-define-prefix filetree-mark-cmd-menu ()
   "Transient for mark commands"
   [:description (lambda ()
-                  (filetree--transient-heading "Mark Command Menu"
+                  (filetree--transient-heading "Filetree Mark Command Menu"
                                                "Commands to mark files and perform operations on marked files."))
-                ["Navigation" :pad-keys ""
-                 :setup-children filetree--navigation-menu-setup-children] ]
-  [["Mark Commands"
-  "(menu persistent operations)"
-    ("m" "Mark item" filetree-mark-item :transient t)
-    ("A" "Mark all" filetree-mark-all :transient t)
-    ("c" "Clear marks" filetree-clear-marks :transient t)]
-  
-   ["Operations on Marked Files"
-    ("M" "Select marked items" filetree-select-marked-items)
-    ("g" "Grep marked files" filetree-grep-marked-files)
-    ("C" "Copy marked files" filetree-copy-marked-files-only)
-    ("R" "Move marked files" filetree-move-marked-files-only)
-    ("o" "Open marked files" filetree-open-marked-files)
-    ("K" "Kill marked buffers" filetree-kill-marked-buffers)
-    ("!" "Shell cmd on marked" filetree-do-shell-command-on-marked-files-only)]])
+                ["Mark Commands"
+                 "(menu persistent)"
+                 ("m" "Mark item" filetree-mark-item :transient t)
+                 ("A" "Mark all" filetree-mark-all :transient t)
+                 ("c" "Clear marks" filetree-clear-marks :transient t)]
+                
+                ["Basic Ops"
+                 ("M" "Keep only marked" filetree-select-marked-items)
+                 ("g" "Grep marked files" filetree-grep-marked-files)
+                 ("K" "Kill marked buffers" filetree-kill-marked-buffers)]
+
+                ["File Manager Ops"
+                 ("C" "Copy marked files" filetree-copy-marked-files-only)
+                 ("R" "Move marked files" filetree-move-marked-files-only)
+                 ("o" "Open marked files" filetree-open-marked-files)
+                 ("D" "Delete marked files" filetree-delete-marked-files-only)]
+
+                ["Custom Ops" :pad-keys ""
+                 :setup-children filetree--marked-ops-custom-setup-children]]
+  [["Basic Actions" :pad-keys ""
+    :setup-children filetree--basic-cmd-menu-setup-children]
+   ["Navigation" :pad-keys ""
+    :setup-children filetree--navigation-menu-setup-children]])
 
 ;; functions
 (defun filetree-close-session ()
@@ -826,8 +890,16 @@ If not, then give error message and throw exception."
                         'help-echo "Untracked"))))
     "remote"))
 
-(defun filetree-sort-by-file-size ()
-  "Sort `filetree-current-file-list' by file size."
+(defun filetree--run-custom-function (func)
+  "Update `filetree-current-file-list' from function FUNC and update filetree.
+The function FUNC should take the current file list as input and output the
+updated file list."
+  (setq filetree-current-file-list
+        (funcall func filetree-current-file-list))
+  (filetree-update-buffer))
+
+(defun filetree-sort-by-file-size (input-file-list)
+  "Sort INPUT-FILE-LIST by file size."
   (interactive)
   (let ((sort-function (lambda (filename1 filename2)
                          (if (or filetree-show-remote-file-info
@@ -845,12 +917,10 @@ If not, then give error message and throw exception."
                                (string< filename1 filename2)
                              (if (file-remote-p filename1)
                                  nil t))))))
-    (setq filetree-current-file-list
-          (sort filetree-current-file-list sort-function))
-    (filetree-update-buffer)))
+    (sort input-file-list sort-function)))
 
-(defun filetree-sort-by-last-modified ()
-  "Sort `filetree-current-file-list' by last modified date/time."
+(defun filetree-sort-by-last-modified (input-file-list)
+  "Sort INPUT-FILE-LIST by last modified date/time."
   (interactive)
   (let ((sort-function (lambda (filename1 filename2)
                          (if (or filetree-show-remote-file-info
@@ -868,9 +938,7 @@ If not, then give error message and throw exception."
                                (string< filename1 filename2)
                              (if (file-remote-p filename1)
                                  nil t))))))
-    (setq filetree-current-file-list
-          (sort filetree-current-file-list sort-function))
-    (filetree-update-buffer)))
+    (sort input-file-list sort-function)))
 
 (defun filetree-filter-by-regex (regex)
   "Filter `filetree-current-file-list' by REGEX and update filetree."
@@ -994,16 +1062,6 @@ Confirms with user before deleting."
           (setq filetree-current-file-list (delete my-file
                                                    filetree-current-file-list)))))
   (filetree-update-buffer))
-
-
-(defun filetree-do-shell-command-on-marked-files-only ()
-  "Use dired-aux functions to run shell command on marked files.
-Output appears in *Shell Command Output*"
-  (interactive)
-  (dired-do-shell-command (dired-read-shell-command
-                           "! on %s: " current-prefix-arg
-                           filetree-marked-file-list)
-                          nil filetree-marked-file-list))
 
 (defun filetree-move-marked-files-only ()
   "Move files in `filetree-marked-file-list'.
@@ -1137,17 +1195,46 @@ If RECURSIVE is non-nil expand recursively."
                              filetree-new-files)))))
   (filetree-update-buffer))
 
-(defun filetree-run-dired ()
-  "Run dired on directory at point."
+(defun filetree--run-custom-single-op (func)
+  "Run FUNC on file or dir at current point."
   (interactive)
-  (dired (filetree-get-name)))
+  (if (fboundp func)
+      (funcall func (filetree-get-name))
+    (error (concat "Command " func " not found"))))
 
-(defun filetree-run-magit ()
-  "Run magit on directory at point."
-  (interactive)
+(defun filetree-run-magit-status (file-or-dir)
+  "Run magit-status on repo for FILE-OR-DIR."
   (if (fboundp 'magit-status)
-    (magit-status (file-name-directory (filetree-get-name)))
+      (magit-status (file-name-directory file-or-dir))
     (error "Command magit-status not found")))
+  
+(defun filetree-run-eshell (file-or-dir)
+  "Open an eshell in directory corresponding to FILE-OR-DIR."
+  (if (fboundp 'eshell)
+      (let ((default-directory (file-name-directory file-or-dir)))
+        (eshell (concat "eshell - " default-directory)))
+    (error "Command eshell not found")))
+
+(defun filetree-contents-to-buffer (file-list)
+  "Append contents of files in FILE-LIST to buffer *filetree-output*."
+  (let ((output-buffer "*filetree-output*"))
+    (with-current-buffer (get-buffer-create output-buffer)
+      (erase-buffer)
+      (dolist (file file-list)
+        (when (file-regular-p file)
+          (insert-file-contents file))))
+    (message (concat "output saved to " output-buffer))))
+
+(defun filetree-do-shell-command-on-files (file-list)
+  "Use dired-aux functions to run shell command on FILE-LIST.
+Output appears in *Shell Command Output*"
+  (if (and (fboundp 'dired-do-shell-command)
+           (fboundp 'dired-read-shell-command))
+      (dired-do-shell-command (dired-read-shell-command
+                               "! on %s: " current-prefix-arg
+                               file-list)
+                              nil file-list)
+    (error "The functions dired-do-shell-command and/or dired-read-shell-command not found")))
 
 (defun filetree-reduce-list-by-10 ()
   "Drop last 10 entries in `filetree-current-file-list'."
@@ -1340,11 +1427,11 @@ In other wrods go to prev branch of tree."
   (setq filetree-current-file-list (funcall filt-function filetree-current-file-list))
   (filetree-update-buffer))
 
-(defun filetree-reverse-list ()
-  "Reverse files in `filetree-current-file-list'."
-  (interactive)
-  (setq filetree-current-file-list (reverse filetree-current-file-list))
-  (filetree-update-buffer))
+;; (defun filetree-reverse-list ()
+;;   "Reverse files in `filetree-current-file-list'."
+;;   (interactive)
+;;   (setq filetree-current-file-list (reverse filetree-current-file-list))
+;;   (filetree-update-buffer))
 
 (defun filetree-print-flat (file-list)
   "Print FILE-LIST in flat format."
@@ -1578,28 +1665,25 @@ TODO: Break into smaller functions and clean-up."
     (insert filetree-symb-for-vertical-pipe " "
             (propertize "# files: " 'font-lock-face 'bold)
             (number-to-string (length filetree-current-file-list))
-            (propertize "    Max depth: " 'font-lock-face 'bold)
+            (propertize "   Max depth: " 'font-lock-face 'bold)
             (if (> filetree-max-depth 0)
                 (number-to-string filetree-max-depth)
               "full")
-            "    "
-            (propertize "Stack size: " 'font-lock-face 'bold)
+            (propertize "   Stack size: " 'font-lock-face 'bold)
             (number-to-string (- (length filetree-file-list-stack) 1))
-            "    "
             (if (> (length filetree-marked-file-list) 0)
                 (concat
-                  (propertize "# Marked: " 'font-lock-face 'bold)
-                  (number-to-string (length filetree-marked-file-list))
-                  " ")
+                  (propertize "   # Marked: " 'font-lock-face 'bold)
+                  (number-to-string (length filetree-marked-file-list)))
               "")
-            " \n")
+            "\n")
     (setq header-length (point))
     (insert (make-string (apply '+ (mapcar (lambda (x)
                                              (nth 1 x))
                                            extra-info)) ?\u2500)
             filetree-symb-for-left-elbow)
     (setq header-length (- header-length
-                           (- (point) header-length)))
+                           (- (point) header-length) 2))
     (insert (make-string header-length ?\u2500))
     (insert filetree-symb-for-right-elbow "\n")
     (setq filetree-start-position (point))))
@@ -2003,7 +2087,7 @@ is empty use `filetree-current-file-list'"
 
 (defun filetree--get-dir (file-or-dir)
   "Return directory of FILE-OR-DIR.
-Simply checks if FILE-OR-DIR ends in / to determine if 
+Simply checks if FILE-OR-DIR ends in / to determine if
 it's a directory."
   (if (string= "/" (substring file-or-dir -1))
       file-or-dir
@@ -2091,19 +2175,6 @@ Supported buffer types are:
   "Load files with entries in notes file."
   (interactive)
   (filetree-show-files (filetree-find-files-with-notes)))
-
-;; (defun filetree-show-vc-root-dir ()
-;;   "Load files in vc root directory of current file."
-;;   (interactive)
-;;   (if (fboundp 'vc-root-dir)
-;;       (let ((root-dir (vc-root-dir)))
-;;         (if root-dir
-;;             (progn
-;;               (setq filetree-current-file-list nil)
-;;               (setq filetree-file-list-stack (list filetree-current-file-list))
-;;               (filetree-expand-dir root-dir 0))
-;;           (error "Not a version controlled repo")))
-;;     (error "No vc-root-dir command available to find root dir")))
 
 (defun filetree-show-vc-root-dir-recursively ()
   "Load files (recursively) in vc root directory of current file."
