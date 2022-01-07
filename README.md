@@ -83,7 +83,7 @@ Within the *filetree* buffer the following navigation and basic commands can be 
 | `filetree-next-branch`   | SPC              | down one branch               |
 | `filetree-prev-branch`   | TAB              | up one branch                 |
 | --                       | RETURN (on file) | open file                     |
-| --                       | RETRUN (on dir)  | narrow to dir                 |
+| --                       | RETURN (on dir)  | narrow to dir                 |
 | `filetree-remove-item`   | x                | remove file/dir from filetree |
 | `filetree-close-session` | q                | exit filetree viewer          |
 
