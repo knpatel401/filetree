@@ -8,31 +8,31 @@ In addition to this file tree viewer functionality, there is also a file note ta
 
 # Summary of features of the package:
 
-* ***File sources & integrations***
+***File sources & integrations***
  * Commands for populating the file list from numerous  sources (e.g., recently opened files, files in open buffers, files in current directory, and files in current directory tree).
  * Integrations with `dired` and `eshell`&mdash; for example, calling `filetree-show-cur-dir` from an `eshell` buffer will pull up the files in the current `eshell` directory, and conversely, there's a command to start an `eshell` buffer from a directory in the filetree.
  * Saving and retrieving multiple file lists between sessions
-* ***Visual contextualization***
+***Visual contextualization***
  * Display files within directory structure, or as a flat list
  * Show tree at different depths
  * Icons and configurable faces to visually differentiate file types
  * Display additional file info (mode, size, date, etc.) in columns to the left.  Support for user-defined columns.
  * File-specific notes dynamically updated in side window
-* ***Interactive filtering & file discovery tools***
+***Interactive filtering & file discovery tools***
  * Filter files by file type or regex (or interactively via helm-based search)
  * Stack providing undo functionality for filter operations
  * Sorting
  * User-defined custom filtering
  * Tools for adding files to original file list
-* ***Actions on files***
+***Actions on files***
  * Actions on single files/directories, e.g., `magit-status`, `dired`, `eshell` on directories in filetree.
  * Support for file marking
  * Commands acting on marked files, e.g., grep, move/copy/delete files, open files in buffers, shell command on files
  * Support for custom user-defined operations on marked files or on single files/directories
-* ***Notes***&mdash;file-specific notes stored in single global file or local project specific file
+***Notes***&mdash;file-specific notes stored in single global file or local project specific file
 
 # Getting Started
-Filetree is available on [MELPA](http://melpa.org/), and can be installed with `package-install` after MELPA is added to package-archives.
+Filetree is available on [MELPA](http://melpa.org/), and can be installed with `M-x package-install` after MELPA is added to package-archives.
 ``` elisp
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 ```
@@ -41,15 +41,16 @@ Once the filetree package is installed and enabled.  There are a few ways to bri
 * `M-x filetree-load-cmd-menu` will bring up a menu from which you can select a source for the filetree (e.g., *r* from this menu will bring up a filetree with recently opened files).
 ![filetree load menu](screenshots/filetree-load-cmd-menu.jpg)
 * Call one of the filetree load commands directly (see table below)
-| Command                           | File list source                                                                            |
-|-----------------------------------|-----------------------------------------------------------------------------------|
-| `filetree-show-recentf-files`       | recentf-list                                                                      |
-| `filetree-show-cur-dir`             | current dir (from filetree, file buffer, eshell, or dired)                        |
-| `filetree-show-cur-dir-recursively` | current dir recursively (from filetree, file buffer, eshell, or dired)            |
+
+| Command                             | File list source                                                                               |
+|-------------------------------------|------------------------------------------------------------------------------------------------|
+| `filetree-show-recentf-files`       | recentf-list                                                                                   |
+| `filetree-show-cur-dir`             | current dir (from filetree, file buffer, eshell, or dired)                                     |
+| `filetree-show-cur-dir-recursively` | current dir recursively (from filetree, file buffer, eshell, or dired)                         |
 | `filetree-show-vc-dir-recursively`  | version control root of current dir recursively (from filetree, file buffer, eshell, or dired) |
-| `filetree-show-cur-buffers`         | buffer-list                                                                       |
-| `filetree-show-files-with-notes`    | populate file list with files with "notes"                                        |
-| `filetree-select-file-list`         | select file list from previously saved lists                                      |
+| `filetree-show-cur-buffers`         | buffer-list                                                                                    |
+| `filetree-show-files-with-notes`    | populate file list with files with "notes"                                                     |
+| `filetree-select-file-list`         | select file list from previously saved lists                                                   |
 * Execute the elisp command ```(filetree-show-files user-file-list)``` where *user-file-list* is a list of filenames with absolute paths.  This will pull up a filetree with the files in *user-file-list*.
 
 # Keybindings & Commands
@@ -58,27 +59,27 @@ Filetree now uses [transient](https://github.com/magit/transient) to organize it
 
 Here's some additional information on the sub-menus:
 
-| Command                     | key | Comment                                                            |
-|-----------------------------|-----|--------------------------------------------------------------------|
-| `filetree-view-mode-menu`     | v   | Change views (e.g., tree depth, flat vs. tree, icons, additional info)        |
-| `filetree-load-cmd-menu`      | l   | Load filetree from different sources                               |
-| `filetree-file-ops-menu`      | o   | Operations on single file/dir (e.g., open dired or eshell on subdir)                                      |
-| `filetree-mark-cmd-menu`      | m   | Marking files and ops on marked files (e.g., grep, move, open)                             |
-| `filetree-filter`             | f   | Filtering and sorting operations                                   |
-| `filetree-expand`             | e   | Add/expand filelist operations                                     |
-| `filetree-expand-recursively` | E   | Add/expand filelist recursively TODO: combine with filetree-expand |
+| Command                       | key | Comment                                                                |
+|-------------------------------|-----|------------------------------------------------------------------------|
+| `filetree-view-mode-menu`     | v   | Change views (e.g., tree depth, flat vs. tree, icons, additional info) |
+| `filetree-load-cmd-menu`      | l   | Load filetree from different sources                                   |
+| `filetree-file-ops-menu`      | o   | Operations on single file/dir (e.g., open dired or eshell on subdir)   |
+| `filetree-mark-cmd-menu`      | m   | Marking files and ops on marked files (e.g., grep, move, open)         |
+| `filetree-filter`             | f   | Filtering and sorting operations                                       |
+| `filetree-expand`             | e   | Add/expand filelist operations                                         |
+| `filetree-expand-recursively` | E   | Add/expand filelist recursively TODO: combine with filetree-expand     |
 
 
 Within the *filetree* buffer the following navigation and basic commands can be used:
 
-| Command                | key              | Comment                       |
-|------------------------|------------------|-------------------------------|
+| Command                  | key              | Comment                       |
+|--------------------------|------------------|-------------------------------|
 | `filetree-next-line`     | down, j          | down one line                 |
 | `filetree-prev-line`     | up, k            | up one line                   |
 | `filetree-next-branch`   | SPC              | down one branch               |
 | `filetree-prev-branch`   | TAB              | up one branch                 |
-| --                     | RETURN (on file) | open file                     |
-| --                     | RETRUN (on dir)  | narrow to dir                 |
+| --                       | RETURN (on file) | open file                     |
+| --                       | RETRUN (on dir)  | narrow to dir                 |
 | `filetree-remove-item`   | x                | remove file/dir from filetree |
 | `filetree-close-session` | q                | exit filetree viewer          |
 
@@ -148,8 +149,8 @@ Pressing "v" (`filetree-view-mode-menu`) will pull up a menu of commands to conf
 
 Alternatively, the following commands can also be used directly.
 
-| Command                               | key    | Comment                                    |
-|---------------------------------------|--------|--------------------------------------------|
+| Command                                 | key    | Comment                                    |
+|-----------------------------------------|--------|--------------------------------------------|
 | `filetree-set-max-depth`                | 0-9    | set max depth of tree to view 0=max        |
 | `filetree-cycle-max-depth`              | <none> | cycle through max depth                    |
 | `filetree-toggle-combine-dir-names`     | /      | toggle combining dir/subdirs in dir name   |
@@ -161,18 +162,18 @@ Alternatively, the following commands can also be used directly.
 ## Operations on single files/directories
 Operations on a single file/directory can be invoked by pressing the *o* key (`filetree-file-ops-menu`)&mdash;this will open the **File Operations Menu** operation menu.  The following commands are in the menu.
 
-| Command | key | Comment                                         |
-|---------|-----|-------------------------------------------------|
-| `dired`   | od  | opens a dired session at the directory at point |
-| `filetree-run-eshell` | oe  | opens an eshell at the directory at point       |
-| `filetree-run-magit-status` | oms | run magit-status on repo for file/dir at point        |
+| Command                     | key | Comment                                         |
+|-----------------------------|-----|-------------------------------------------------|
+| `dired`                     | od  | opens a dired session at the directory at point |
+| `filetree-run-eshell`       | oe  | opens an eshell at the directory at point       |
+| `filetree-run-magit-status` | oms | run magit-status on repo for file/dir at point  |
 
 Users can also add their own operations by customizing *filetree-custom-single-operations*.
 ## Marking files
 Filetree has support for marking files and performing operations on the marked files.  Pressing *m* (`filetree-mark-cmd-menu`) will pull up the **Mark Command Menu**.
 ![filetree mark cmd menu](screenshots/filetree-mark-menu.jpg)
 
-This enables marking of files followed by an operation on the marked files.  When files are marked, a small green arrow <span style="color:green">&#9654;</span> is shown to the left of the filetree indicating the file is marked.  The mark command menu persists through the marking commands, and exits either when the user selects an operation (e.g., "Keep only marked") or when the user presses C-g to exit the menu.
+This enables marking of files followed by an operation on the marked files.  When files are marked, a small green arrow is shown to the left of the filetree indicating the file is marked.  The mark command menu persists through the marking commands, and exits either when the user selects an operation (e.g., "Keep only marked") or when the user presses C-g to exit the menu.
 
 Note that marks on files are not affected by the filtering operations, so you can use the filtering tools to track down each of the files you're interested in one by one, building up the marked file list, and then perform an operations on all marked files.
 
@@ -182,26 +183,26 @@ In addition to the operations that are available in the current menu, users can 
 
 There are a number of ways to filter down the file list or to add files to the file list.  The results after each filtering or expansion operations is put on a stack and can be undone by popping off the stack using the *b* key.  The current filetree can also be "subtracted" from the previous filelist on the stack using the *-* key&mdash;this can be useful to do a complementary filtering (e.g., keep all but the files matching a regex).
 
-| Command                             | key | Comment                                                                     |
-|-------------------------------------|---------|-----------------------------------------------------------------------------|
-| `filetree-diff-with-file-list-stack`  | -       | remove files in current file-list from list on stack and make new file-list |
-| `filetree-union-with-file-list-stack` | +       | combine files in current file-list and list on stack into new file-list     |
-| `filetree-pop-file-list-stack`        | b       | undo prev filter/expansion operation                     
+| Command                               | key | Comment                                                                     |
+|---------------------------------------|-----|-----------------------------------------------------------------------------|
+| `filetree-diff-with-file-list-stack`  | -   | remove files in current file-list from list on stack and make new file-list |
+| `filetree-union-with-file-list-stack` | +   | combine files in current file-list and list on stack into new file-list     |
+| `filetree-pop-file-list-stack`        | b   | undo prev filter/expansion operation                                        |
 
 The filtering and expansion operations menus can be pulled up by the following keys/commands.
 
-| Command                     | key map | Comment                                     |
-|-----------------------------|---------|---------------------------------------------|
-| `filetree-filter`             | f       | Filter operations                           |
-| `filetree-expand`             | e       | Expansion operations                        |
-| `filetree-expand-recursively` | E       | Expansion operations (recursive)            |
-| --                          | RET     | Return on subdir, narrows to that subdir    |
+| Command                       | key map | Comment                                  |
+|-------------------------------|---------|------------------------------------------|
+| `filetree-filter`             | f       | Filter operations                        |
+| `filetree-expand`             | e       | Expansion operations                     |
+| `filetree-expand-recursively` | E       | Expansion operations (recursive)         |
+| --                            | RET     | Return on subdir, narrows to that subdir |
 
 For example, pressing *f* will pull up the following filter menu.
 ![filetree filter menu](screenshots/filetree-filter-menu.jpg)
 This allows you to filter based on regex (e.g., *p* will keep only python files) or interactively using a helm-based search.  You can also sort the list, e.g., by last modification time.
 
-Notes:.
+Notes:
 * The result of the sort operations are only really visible in the flat view mode (see `filetree-toggle-flat-vs-tree` command)
 * The `filetree-toggle-combined-dir-names` command (see in View mode section) can be helpful when wanted to use `filetree-expand` (or `filetree-expand-dir-recursively`) on a directory one or more levels above a file in the file list.
 
