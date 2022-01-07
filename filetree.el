@@ -1072,9 +1072,10 @@ in the filetree."
   (if (y-or-n-p (concat "Are you sure you want to move "
                         (number-to-string (length filetree-marked-file-list))
                         " files?"))
-      (let ((dest-dir (read-directory-name
-                       "Directory to mv files to: "
-                       (file-name-directory (filetree-get-name))))
+      (let ((dest-dir (expand-file-name
+                       (read-directory-name
+                        "Directory to mv files to: "
+                        (file-name-directory (filetree-get-name)))))
             (new-file nil)
             (orig-file nil))
         (while filetree-marked-file-list
@@ -1096,9 +1097,10 @@ in the filetree."
   (if (y-or-n-p (concat "Are you sure you want to copy "
                         (number-to-string (length filetree-marked-file-list))
                         " files?"))
-      (let ((dest-dir (read-directory-name
-                       "Directory to copy files to: "
-                       (file-name-directory (filetree-get-name))))
+      (let ((dest-dir (expand-file-name
+                       (read-directory-name
+                        "Directory to copy files to: "
+                        (file-name-directory (filetree-get-name)))))
             (new-file nil)
             (orig-file nil))
         (while filetree-marked-file-list
