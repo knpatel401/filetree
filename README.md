@@ -12,23 +12,27 @@ In addition to this file tree viewer functionality, there is also a file note ta
  * Commands for populating the file list from numerous  sources (e.g., recently opened files, files in open buffers, files in current directory, and files in current directory tree).
  * Integrations with `dired` and `eshell`&mdash; for example, calling `filetree-show-cur-dir` from an `eshell` buffer will pull up the files in the current `eshell` directory, and conversely, there's a command to start an `eshell` buffer from a directory in the filetree.
  * Saving and retrieving multiple file lists between sessions
+ 
 ***Visual contextualization***
  * Display files within directory structure, or as a flat list
  * Show tree at different depths
  * Icons and configurable faces to visually differentiate file types
  * Display additional file info (mode, size, date, etc.) in columns to the left.  Support for user-defined columns.
  * File-specific notes dynamically updated in side window
+ 
 ***Interactive filtering & file discovery tools***
  * Filter files by file type or regex (or interactively via helm-based search)
  * Stack providing undo functionality for filter operations
  * Sorting
  * User-defined custom filtering
  * Tools for adding files to original file list
+ 
 ***Actions on files***
  * Actions on single files/directories, e.g., `magit-status`, `dired`, `eshell` on directories in filetree.
  * Support for file marking
  * Commands acting on marked files, e.g., grep, move/copy/delete files, open files in buffers, shell command on files
  * Support for custom user-defined operations on marked files or on single files/directories
+ 
 ***Notes***&mdash;file-specific notes stored in single global file or local project specific file
 
 # Getting Started
