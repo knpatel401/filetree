@@ -612,6 +612,12 @@ entry of the list has the following:
                               filetree-current-file-list))))
   (filetree-update-buffer))
 
+;; wrapper function
+(defun filetree-filter-by-regex-custom ()
+  "Filter `filetree-current-file-list' by user-defined regex and update filetree."
+  (interactive)
+  (filetree-filter-by-regex))
+
 (transient-define-prefix filetree-filter ()
   "Filter by regex commands"
   [:description (lambda ()
@@ -621,7 +627,7 @@ entry of the list has the following:
                 ["Regex filters"
                  :setup-children filetree--filter-regex-setup-children]
                 [""
-                 ("<RET>" "Custom" (lambda () (interactive) (filetree-filter-by-regex nil)))]
+                 ("<RET>" "Custom" filetree-filter-by-regex-custom)]
                 ["Other Filters"
                  ("H" "Helm-based filter" filetree-helm-filter)]
                 ["Custom functions"
@@ -695,6 +701,13 @@ If RECURSIVE is non-nil expand recursively."
                              filetree-new-files)))))
   (filetree-update-buffer))
 
+;; wrapper function
+(defun filetree-expand-dir-custom ()
+  "Add files in dir at point to `filetree-current-file-list'.
+Prompt user for regular expression."
+  (interactive)
+  (filetree-expand-dir nil nil))
+
 (transient-define-prefix filetree-expand ()
   "Expand/Add to file list"
   [:description (lambda ()
@@ -703,7 +716,7 @@ If RECURSIVE is non-nil expand recursively."
                 ["Regex filters"
                  :setup-children filetree--expand-setup-children]
                 [""
-                 ("<RET>" "Custom" (lambda () (interactive) (filetree-expand-dir nil nil)))]]
+                 ("<RET>" "Custom" filetree-expand-dir-custom)]]
   [["Navigation" :pad-keys ""
     :setup-children filetree--navigation-menu-setup-children]
    ["Stack Commands" :pad-keys ""
@@ -722,6 +735,13 @@ If RECURSIVE is non-nil expand recursively."
                       (filetree-expand-dir nil (nth 2 x)))))))
            filetree-filetype-list))
 
+;; wrapper function
+(defun filetree-expand-dir-recursive-custom ()
+  "Add files recursively in dir at point to `filetree-current-file-list'.
+Prompt user for regular expression."
+  (interactive)
+  (filetree-expand-dir nil nil t))
+
 (transient-define-prefix filetree-expand-recursively ()
   "Expand/Add to file list recursively.
 TODO: combine with filetree-expand."
@@ -731,8 +751,7 @@ TODO: combine with filetree-expand."
                 ["Regex filters"
                  :setup-children filetree--expand-recursive-setup-children]
                 [""
-                 ("<RET>" "Custom" (lambda () (interactive)
-                                     (filetree-expand-dir nil nil t)))]]
+                 ("<RET>" "Custom" filetree-expand-dir-recursive-custom)]]
   [["Navigation" :pad-keys ""
     :setup-children filetree--navigation-menu-setup-children]
    ["Stack Commands" :pad-keys
