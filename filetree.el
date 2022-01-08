@@ -600,6 +600,18 @@ entry of the list has the following:
    ["Navigation" :pad-keys ""
     :setup-children filetree--navigation-menu-setup-children]])
 
+(defun filetree-filter-by-regex (regex)
+  "Filter `filetree-current-file-list' by REGEX and update filetree."
+  (let ((regex (or regex
+                   (read-string "Type a regex: "))))
+    (setq filetree-current-file-list
+          (delete nil (mapcar (lambda (x)
+                                (if (string-match regex
+                                                  (file-name-nondirectory x))
+                                    x nil))
+                              filetree-current-file-list))))
+  (filetree-update-buffer))
+
 (transient-define-prefix filetree-filter ()
   "Filter by regex commands"
   [:description (lambda ()
@@ -644,6 +656,44 @@ entry of the list has the following:
                       (interactive)
                       (filetree--run-custom-function (nth 2 x)))))))
            filetree-custom-filelist-operations))
+
+(defun filetree-expand-dir (&optional dir regex recursive)
+  "Add files in DIR to `filetree-current-file-list'.
+If DIR is not specified, use dir at point.
+Only files matching regular expression REGEX are included.
+If REGEX is not specified prompt user for regular expression.
+If RECURSIVE is non-nil expand recursively."
+  (let ((dir (or dir (filetree-get-name)))
+        (regex (or regex
+                   (read-string "Type a regex: ")))
+        (filetree-new-files nil))
+    ;; search for relevant files
+    (setq filetree-new-files (if recursive
+                                 (directory-files-recursively dir regex nil t)
+                               (delete nil (mapcar (lambda (x)
+                                                     (if (string-match
+                                                          regex
+                                                          (file-name-nondirectory (car x)))
+                                                         (if (null (nth 1 x))
+                                                             (car x)
+                                                           nil)))
+                                                   (directory-files-and-attributes dir t)))))
+    ;; (directory-files dir t regex)))
+    ;; remove excluded files
+    (dolist (entry filetree-exclude-list)
+      (setq filetree-new-files (delete nil (mapcar (lambda (x)
+                                                     (if (string-match
+                                                          entry
+                                                          x)
+                                                         nil
+                                                       x))
+                                                   filetree-new-files))))
+    ;; filter out duplicates
+    (setq filetree-current-file-list
+          (-distinct (-non-nil
+                      (nconc filetree-current-file-list
+                             filetree-new-files)))))
+  (filetree-update-buffer))
 
 (transient-define-prefix filetree-expand ()
   "Expand/Add to file list"
@@ -940,18 +990,6 @@ updated file list."
                                  nil t))))))
     (sort input-file-list sort-function)))
 
-(defun filetree-filter-by-regex (regex)
-  "Filter `filetree-current-file-list' by REGEX and update filetree."
-  (let ((regex (or regex
-                   (read-string "Type a regex: "))))
-    (setq filetree-current-file-list
-          (delete nil (mapcar (lambda (x)
-                                (if (string-match regex
-                                                  (file-name-nondirectory x))
-                                    x nil))
-                              filetree-current-file-list))))
-  (filetree-update-buffer))
-
 (defun filetree-open-or-narrow (&optional file-or-dir)
   "Open file or narrow to subdirectory.
 If FILE-OR-DIR not specified, use file or dir at point."
@@ -1158,44 +1196,6 @@ If file-or-dir not specified, use file or dir at point."
   (if (button-at (point))
       (button-get (button-at (point)) 'name)
     nil))
-
-(defun filetree-expand-dir (&optional dir regex recursive)
-  "Add files in DIR to `filetree-current-file-list'.
-If DIR is not specified, use dir at point.
-Only files matching regular expression REGEX are included.
-If REGEX is not specified prompt user for regular expression.
-If RECURSIVE is non-nil expand recursively."
-  (let ((dir (or dir (filetree-get-name)))
-        (regex (or regex
-                   (read-string "Type a regex: ")))
-        (filetree-new-files nil))
-    ;; search for relevant files
-    (setq filetree-new-files (if recursive
-                                 (directory-files-recursively dir regex nil t)
-                               (delete nil (mapcar (lambda (x)
-                                                     (if (string-match
-                                                          regex
-                                                          (file-name-nondirectory (car x)))
-                                                         (if (null (nth 1 x))
-                                                             (car x)
-                                                           nil)))
-                                                   (directory-files-and-attributes dir t)))))
-    ;; (directory-files dir t regex)))
-    ;; remove excluded files
-    (dolist (entry filetree-exclude-list)
-      (setq filetree-new-files (delete nil (mapcar (lambda (x)
-                                                     (if (string-match
-                                                          entry
-                                                          x)
-                                                         nil
-                                                       x))
-                                                   filetree-new-files))))
-    ;; filter out duplicates
-    (setq filetree-current-file-list
-          (-distinct (-non-nil
-                      (nconc filetree-current-file-list
-                             filetree-new-files)))))
-  (filetree-update-buffer))
 
 (defun filetree--run-custom-single-op (func)
   "Run FUNC on file or dir at current point."
