@@ -18,7 +18,7 @@ In addition to this file tree viewer functionality, there is also a file note ta
  * Show tree at different depths
  * Icons and configurable faces to visually differentiate file types
  * Display additional file info (mode, size, date, etc.) in columns to the left.  Support for user-defined columns.
- * File-specific notes dynamically updated in side window
+ * File-specific notes or preview dynamically updated in side window
  
 ***Interactive filtering & file discovery tools***
  * Filter files by file type or regex (or interactively via helm-based search)

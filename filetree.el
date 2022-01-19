@@ -116,6 +116,11 @@ This can also be toggled using `filetree-toggle-use-all-icons'."
 This can also be toggled using `filetree-toggle-info-buffer'."
   :group 'filetree-startup-prefs
   :type 'boolean)
+(defcustom filetree-preview-window nil
+  "Set to t to show preview in side window.
+This can also be toggled using `filetree-toggle-preview-buffer'."
+  :group 'filetree-startup-prefs
+  :type 'boolean)
 (defcustom filetree-show-remote-file-info nil
   "Set to t to show additional file info for remote files as well."
   :group 'filetree-startup-prefs
@@ -137,6 +142,11 @@ This can also be toggled using `filetree-toggle-info-buffer'."
   "Maximum number of candidates to show in tree when using helm-based filtering."
   :group 'filetree-configurations
   :type 'integer)
+(defcustom filetree-preview-file-size-limit 10000000
+  "File size limit for preview."
+  :group 'filetree-configurations
+  :type 'integer)
+
 (defcustom filetree-info-cycle-list
   '(;; cycle 0 - no info
     ()
@@ -375,6 +385,7 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
 ;; ---------
 (defvar filetree-info-buffer nil)
 (defvar filetree-info-buffer-state nil)
+(defvar filetree-preview-buffer nil)
 (defvar filetree-saved-lists '(("recentf" (lambda ()
                                             recentf-list))))
 (if (file-exists-p filetree-saved-lists-file)
@@ -579,6 +590,7 @@ entry of the list has the following:
                  ("/" "Toggle Combine Dirname" filetree-toggle-combine-dir-names)
                  ("." "Toggle tree/flat view" filetree-toggle-flat-vs-tree)
                  ("i" "Toggle info buffer" filetree-toggle-info-buffer)
+                 ("p" "Toggle preview buffer" filetree-toggle-preview-buffer)
                  (";" "Toggle icons" filetree-toggle-use-all-icons)]
                 ["Extra info controls"
                  ("]" "Cycle+ extra info" filetree-increment-current-info-cycle)
@@ -600,7 +612,7 @@ entry of the list has the following:
    ["Navigation" :pad-keys ""
     :setup-children filetree--navigation-menu-setup-children]])
 
-(defun filetree-filter-by-regex (regex)
+(defun filetree-filter-by-regex (&optional regex)
   "Filter `filetree-current-file-list' by REGEX and update filetree."
   (let ((regex (or regex
                    (read-string "Type a regex: "))))
@@ -868,6 +880,8 @@ TODO: combine with filetree-expand."
 (defun filetree-close-session ()
   "Close filetree session."
   (interactive)
+  (filetree-close-preview-buffer)
+  (filetree-close-info-buffer)
   (filetree-buffer-check)
   (kill-buffer (current-buffer)))
 
@@ -1028,6 +1042,8 @@ If FILE-OR-DIR not specified, use file or dir at point."
                                                   filetree-current-file-list)))
           (filetree-update-buffer))
       ;; open file
+      (filetree-close-preview-buffer)
+      (filetree-close-info-buffer)
       (find-file file-or-dir))))
 
 (defun filetree-remove-item (&optional file-or-dir)
@@ -1354,7 +1370,10 @@ If maxdepth not specified, show full tree."
   (forward-char)
   (if (and (buffer-live-p filetree-info-buffer)
            (window-live-p filetree-info-window))
-    (filetree-update-info-buffer (filetree-get-name))))
+      (filetree-update-info-buffer (filetree-get-name)))
+  (if (and (buffer-live-p filetree-preview-buffer)
+           (window-live-p filetree-preview-window))
+      (filetree-preview-file (filetree-get-name))))
 
 (defun filetree-next-branch ()
   "Go to next item at the same or higher level in the tree.
@@ -1468,12 +1487,18 @@ In other wrods go to prev branch of tree."
           (insert (all-the-icons-icon-for-file filename) " "))
       (insert-text-button  filename
                            'face (filetree-file-face first-file)
-                           'action (lambda (x) (find-file (button-get x 'name)))
+                           'action (lambda (x)
+                                     (filetree-close-preview-buffer)
+                                     (filetree-close-info-buffer)
+                                     (find-file (button-get x 'name)))
                            'name first-file)
       (insert (make-string (max 1 (- 30 (length filename))) ?\s))
       (insert-text-button (concat directory-name "\n")
                           'face 'default
-                          'action (lambda (x) (find-file (button-get x 'name)))
+                          'action (lambda (x)
+                                    (filetree-close-preview-buffer)
+                                    (filetree-close-info-buffer)
+                                    (find-file (button-get x 'name)))
                           'name first-file))
     (if remaining
         (filetree-print-flat remaining))))
@@ -1615,7 +1640,10 @@ TODO: Break into smaller functions and clean-up."
                     (insert (all-the-icons-icon-for-file file-text) " "))
                 (insert-text-button file-text
                                     'face button-face
-                                    'action (lambda (x) (find-file (button-get x 'name)))
+                                    'action (lambda (x)
+                                              (filetree-close-preview-buffer)
+                                              (filetree-close-info-buffer)
+                                              (find-file (button-get x 'name)))
                                     'name my-link))
               (insert "\n")))
       (let ((remaining-entries (nth cur-depth my-depth-list)))
@@ -1787,6 +1815,100 @@ there then return nil."
           nil
         my-file))))
 
+(defun filetree-toggle-preview-buffer ()
+  "Toggle preview buffer in side window."
+  (interactive)
+  (if (and (buffer-live-p filetree-preview-buffer)
+           (window-live-p filetree-preview-window))
+      (filetree-close-preview-buffer)
+    (progn
+      ;; disable info buffer first
+      (filetree-close-info-buffer)
+      (filetree-preview-file (filetree-get-name)))))
+
+(defun filetree-close-preview-buffer ()
+  "Close preview buffer if open."
+  (interactive)
+  (if (and (buffer-live-p filetree-preview-buffer)
+           (window-live-p filetree-preview-window))
+      (progn
+        (switch-to-buffer filetree-preview-buffer)
+        (setq buffer-read-only nil)
+        (kill-buffer filetree-preview-buffer))))
+
+  
+(defun filetree-preview-dir-contents (dir-name)
+  "Insert directory contents of DIR-NAME for preview."
+  (interactive)
+  (insert (propertize (concat "Directory: "
+                              (file-name-nondirectory
+                               (substring dir-name 0 -1)))
+                      'font-lock-face 'underline) "\n")
+  (let ((files (directory-files dir-name)))
+    (setq files (mapcar (lambda (x)
+                          (if (file-directory-p (concat dir-name x))
+                              (concat x "/") x))
+                        files))
+    ;; remove excluded files
+    (dolist (entry filetree-exclude-list)
+      (setq files (delete nil (mapcar (lambda (x)
+                                        (if (string-match entry
+                                                          (concat dir-name x))
+                                            nil
+                                          x))
+                                      files))))
+    ;; list directories
+    (mapc (lambda (x)
+            (if (file-directory-p (concat dir-name x))
+                (progn
+                  (insert (propertize (concat x "\n")
+                                      'font-lock-face 'bold))
+                  (setq files (delete x files)))))
+          files)
+    ;; list files
+    (mapc (lambda (x)
+            (insert (propertize x 'font-lock-face (filetree-file-face x))
+                    "\n"))
+          files))
+  (goto-char (point-min))
+  (end-of-line))
+                                      
+(defun filetree-preview-file (file-name)
+  "Preview contents of FILE-NAME to buffer *filetree-preview*."
+  (let ((current-window (selected-window))
+        (preview-buffer-name "*filetree-preview*"))
+        ;; (inhibit-read-only t))
+    (setq filetree-preview-buffer (get-buffer-create preview-buffer-name))
+    (with-current-buffer filetree-preview-buffer
+      (setq buffer-read-only nil)
+      (set-text-properties (point-min) (point-max) ())
+      (erase-buffer)
+      (cond ((file-remote-p file-name)
+             (insert (concat (file-name-nondirectory file-name)
+                             " is remote")))
+            ;; directory
+            ((string= "/" (substring file-name -1))
+             (filetree-preview-dir-contents file-name))
+            ;; file too large
+            ((< filetree-preview-file-size-limit
+                (file-attribute-size (file-attributes file-name)))
+             (insert (concat (file-name-nondirectory file-name)
+                             " over file size limit for preview")))
+            ((image-type-from-file-header file-name)
+             (insert (concat (file-name-nondirectory file-name)
+                             " is image -- not showing preview")))
+            (t (insert-file-contents file-name t)
+               (normal-mode)))
+        ;; (insert-directory file-name "-lt"))
+      (setq filetree-preview-window (display-buffer-in-side-window
+                                     filetree-preview-buffer
+                                     '((side . right))))
+      (select-window filetree-preview-window)
+      (switch-to-buffer filetree-preview-buffer)
+      (set-buffer-modified-p nil))
+      ;; (setq buffer-read-only t))
+    (select-window current-window)))
+
 (defun filetree-toggle-info-buffer (&optional switch-to-info-flag)
   "Toggle info buffer in side window.
 If SWITCH-TO-INFO-FLAG is true, then switch to the info window afterwards."
@@ -1796,16 +1918,13 @@ If SWITCH-TO-INFO-FLAG is true, then switch to the info window afterwards."
                                 nil)))
     (if (and (buffer-live-p filetree-info-buffer)
              (window-live-p filetree-info-window))
-        (progn
-          (switch-to-buffer filetree-info-buffer)
-          (save-buffer)
-          (kill-buffer filetree-info-buffer)
-          (setq filetree-info-buffer-state nil))
+        (filetree-close-info-buffer)
+      ;; disable preview buffer first
+      (filetree-close-preview-buffer)
       (setq filetree-info-buffer (find-file-noselect (or
                                                       (filetree-find-notes-file
-                                                          file-for-info-buffer)
-                                                         filetree-notes-file)))
-      (setq filetree-info-buffer-state t)
+                                                       file-for-info-buffer)
+                                                      filetree-notes-file)))
       (setq filetree-info-window
             (display-buffer-in-side-window filetree-info-buffer
                                            '((side . right))))
@@ -1815,6 +1934,17 @@ If SWITCH-TO-INFO-FLAG is true, then switch to the info window afterwards."
       (if switch-to-info-flag
           (select-window filetree-info-window)))))
 
+(defun filetree-close-info-buffer ()
+  "Close info buffer.
+If open, save before closing."
+  (interactive)
+  (if (and (buffer-live-p filetree-info-buffer)
+           (window-live-p filetree-info-window))
+      (progn
+        (switch-to-buffer filetree-info-buffer)
+        (save-buffer)
+        (kill-buffer filetree-info-buffer))))
+  
 (defun filetree-update-info-buffer (&optional current-file-name)
   "Update info buffer contents to reflect CURRENT-FILE-NAME.
 If CURENT-FILE-NAME not given use 'buffer-file-name'.
