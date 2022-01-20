@@ -101,9 +101,7 @@ Here are links to sections of the video that cover specific topics.
 | [File Notes](https://youtu.be/-KrMaLq8Bms?t=1181)                       | Covers the file notes functionality.                                              |
 
 # Use Cases and Alternatives
-The filetree package provides a set of interactive tools for finding and discovering files and information about files:
-
-These tools can be used in a number of different ways.  Some possible use cases along with alternatives are discussed below.
+The filetree package provides a set of interactive tools for finding and discovering files and information about files.  These tools can be used in a number of different ways.  Some possible use cases along with alternatives are discussed below.
 
 ## Recent files use case
 The filetree package can be used as a wrapper for the built-in recentf commands.  The command for using the wrapper is `filetree-show-recentf-files`.  Compared with the basic recentf commands, the filetree command provides better visual context for the recent files, and a host of tools for filtering the recent file list or finding other files that are located around a recently accessed file.  This enables users to use recent files in a more expansive way.  Users may want to increase the number of files saved from default of 20 to something higher using the following setting:
