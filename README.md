@@ -253,10 +253,15 @@ The configurations settings used at startup are grouped under the *filetree-star
 | *filetree-use-all-the-icons*     | nil     | Set to t to show icons for files/dirs                                         |
 | *filetree-show-remote-file-info* | nil     | Set to t to show additional file info for remote files as well as local files |
 
-Note enabling use-all-the-icons can make some of the operations sluggish if the file list is large.  Also, you may need to set the scaling for the icons to match the height of the text:
+Note enabling *filetree-use-all-the-icons* can make some of the operations sluggish if the file list is large.  Also, you may need to set the scaling for the icons to match the height of the text:
 ```
 (setq all-the-icons-scale-factor 1)
 ```
+If you don't see proper icons, you may need to install [all-the-icon](https://github.com/domtronn/all-the-icons.el) fonts:
+```
+M-x all-the-icons-install-fonts 
+```
+
 The variable *filetree-show-remote-file-info* is set to nil by default because determining file info (e.g., file size, mode, etc.) can be slow for remote file systems.
 
 ## Additional file info configuration
