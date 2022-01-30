@@ -24,14 +24,14 @@
 ;;; Commentary:
 
 ;; Filetree is a package that provides a set of interactive file management
-;; tools. The core functionality is a file tree viewer which displays a
-;; file list as a directory tree in a special buffer. There are numerous
+;; tools.  The core functionality is a file tree viewer which displays a
+;; file list as a directory tree in a special buffer.  There are numerous
 ;; interactive tools available to the user within this special buffer.
 
 ;; In addition to this file tree viewer functionality, there is also a
-;; file note taking feature in the package. The file notes enable the user
+;; file note taking feature in the package.  The file notes enable the user
 ;; to write and display (org-mode) notes associated with individual files
-;; and directories. The note can be displayed in a side buffer either when
+;; and directories.  The note can be displayed in a side buffer either when
 ;; cycling through files in the file tree viewer or when the file is open
 ;; in a buffer.
 
@@ -415,7 +415,7 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
 (defvar filetree-current-info-cycle 0
   "This tracks the current state of file info on the left side of the window.")
 
-(defvar filetree-map
+(defvar filetree-mode-map
   (let ((map (make-sparse-keymap)))
     ;; transient menus
     (define-key map "h" 'filetree-command-help)
@@ -516,7 +516,7 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
                                   (if (car x)
                                       (car x)
                                     (nth 2 x))
-                                  filetree-map)))
+                                  filetree-mode-map)))
                       (cdr x)))))
            '((nil "View modes       - commands to change view" filetree-view-mode-menu)
              (nil "Load cmds        - commands to load filetree from different sources"
@@ -550,7 +550,7 @@ entry of the list has the following:
             (car
              (transient--parse-child
               'filetree-load-cmd-menu
-              (append (list (car (where-is-internal (nth 1 x) filetree-map)))
+              (append (list (car (where-is-internal (nth 1 x) filetree-mode-map)))
                       x))))
           child-list))
   
@@ -2051,7 +2051,7 @@ If SKIP-UPDATE-STACK is t, `filetree-file-list-stack' is not updated."
           (switch-to-buffer filetree-buffer-name)
           (filetree-goto-name filetree-current-name)
           (setq buffer-read-only t)
-          (filetree)
+          (filetree-mode)
           (text-scale-increase text-scale-previous))))))
 
 (defun filetree-pop-file-list-stack ()
@@ -2350,9 +2350,15 @@ Supported buffer types are:
     (error "No vc-root-dir or magit-toplevel command available to find root dir")))
 ;; ---------------------------
 
-(define-derived-mode filetree nil "Text"
+(defun filetree ()
+  "Pull up filetree-load-cmd-menu and prompt user."
+  (interactive)
+  (message "Use Load Command Menu to select file list (C-g to exit).")
+  (filetree-load-cmd-menu))
+
+(define-derived-mode filetree-mode nil "Text"
   "A mode to view and perform operations on files via a tree view"
-  (make-local-variable 'filetree-list))
+  (use-local-map filetree-mode-map))
 
 (provide 'filetree)
 ;;; filetree.el ends here
