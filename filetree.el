@@ -1048,7 +1048,8 @@ If FILE-OR-DIR not specified, use file or dir at point."
   "Remove the file or subdir FILE-OR-DIR from the `filetree-current-file-list'.
 If file-or-dir not specified, use file or dir at point."
   (interactive)
-  (let ((file-or-dir (or file-or-dir (filetree-get-name))))
+  (let ((file-or-dir (or file-or-dir (filetree-get-name)))
+        (current-pos (point)))
     (setq filetree-current-file-list (delete
                                     nil
                                     (if (string= "/"
@@ -1066,7 +1067,12 @@ If file-or-dir not specified, use file or dir at point."
                                                      file-or-dir
                                                      x)
                                                     nil x))
-                                              filetree-current-file-list)))))
+                                              filetree-current-file-list))))
+    (filetree-prev-line)
+    (while (and (< (point) current-pos)
+                (not (member (filetree-get-name) filetree-current-file-list)))
+      (setq current-pos (point))
+      (filetree-prev-line)))
   (filetree-update-buffer))
 
 (defun filetree-clear-marks ()
