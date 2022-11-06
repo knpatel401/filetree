@@ -1985,7 +1985,7 @@ and create a new note if one doesn't exist."
                ;; filetree buffer
                ((equal (buffer-name) filetree-buffer-name) (filetree-get-name))
                ;; file buffer
-               ((buffer-file-name) (file-name-directory (buffer-file-name))))))))
+               ((buffer-file-name) (buffer-file-name)))))))
     (if (not cur-file)
         (error "Must be in a file buffer, dired buffer, or filetree buffer"))
     ;; disable preview buffer first
@@ -1994,6 +1994,7 @@ and create a new note if one doesn't exist."
              (window-live-p filetree-info-window))
         (filetree-close-info-buffer))
     (filetree-toggle-info-buffer t)
+    (message cur-file)
     (filetree-update-info-buffer cur-file t)))
 
 (defun filetree-update-info-buffer (&optional current-file-name create-new-entry-flag)

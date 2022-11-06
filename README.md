@@ -214,7 +214,7 @@ This package maintains a notes file in the file specified by *filetree-notes-fil
 
 Local project specific notes files can also be used--simply create an empty file in the project directory with the name "*filetree-notes-local.org*" (or whatever name is set by the variable *filetree-relative-notes-filename*).  Files under this directory will use this file for notes instead of the main file.  The file links in the local file will be relative to the project directory.  The main org-mode file will still be used for files without a local org-mode file.
 
-In order to go to the entry for a file (and create an entry if it doesn't exist from a file buffers), use the `filetree-toggle-info-buffer` command.  For example, you can use the following key binding in your .emacs to run the command:
+In order to toggle the info buffer use the `filetree-toggle-info-buffer` command.  If called from a file buffer, this command will create a new entry if it doesn't already exist.  You can create a keybinding in your `.emacs` to run the command, e.g.,:
 ```
 (global-set-key (kbd "C-c <return>") (lambda ()
                                        "Toggle filetree-info-buffer and switch to it if active"
@@ -223,7 +223,7 @@ In order to go to the entry for a file (and create an entry if it doesn't exist 
 ```
 The same command will open and close (after saving) the notes buffer in the side window.
 
-To create a new note from the file at point in the *filetree* buffer or a *dired* buffer, use the command `filetree-create-note`.  If you would like to have the notes update as you navigate through *dired* buffers (as they do in the *filetree* buffer), you can add the following advice call in your `.emacs`:
+To create a new note from the file at point in the *filetree* buffer, a *dired* buffer or a file buffer, use the command `filetree-create-note`.  If you would like to have the notes update as you navigate through *dired* buffers (as they do in the *filetree* buffer), you can add the following advice call in your `.emacs`:
 ```
 (advice-add 'dired-next-line :after
             (lambda (&rest args)
