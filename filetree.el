@@ -438,7 +438,7 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
     (define-key map "q" 'filetree-close-session)
     (define-key map "x" 'filetree-remove-item)
     (define-key map (kbd "<RET>") 'filetree-open-or-narrow)
-    (define-key map (kbd "C-<RET>") 'filetree-open-in-other-window)
+    ;; (define-key map (kbd "C-<RET>") 'filetree-open-in-other-window)
     ;; stack operations
     (define-key map "b" 'filetree-pop-file-list-stack)
     (define-key map "-" 'filetree-diff-with-file-list-stack)
@@ -576,8 +576,8 @@ entry of the list has the following:
   "Helper function to generate setup-children for basic cmds."
   (append
    (filetree--setup-children '(("Quit filetree" filetree-close-session)
-                               ("Remove item" filetree-remove-item :transient t)
-                               ("Open in other win" filetree-open-in-other-window :transient t)))
+                               ("Remove item" filetree-remove-item :transient t)))
+                               ;; ("Open in other win" filetree-open-in-other-window :transient t)))
    ;; special handling because if point on file,
    ;; :transient should be nil and for dir :transient should be t
    (transient--parse-child
