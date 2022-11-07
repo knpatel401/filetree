@@ -1973,7 +1973,7 @@ If open, save before closing."
    ((equal major-mode 'dired-mode) (file-truename
                                     (let ((file (condition-case nil
                                                     (dired-get-file-for-visit)
-                                                  (error nil))))
+                                                  (error ""))))
                                       (if (file-directory-p file)
                                           (concat file "/")
                                         file))))
