@@ -1937,11 +1937,8 @@ there then return nil."
   "Toggle info buffer in side window.
 If SWITCH-TO-INFO-FLAG is true, then switch to the info window afterwards."
   (interactive)
-  (let ((file-for-info-buffer (if (string-equal (buffer-name) filetree-buffer-name)
-                                  (filetree-get-name)
-                                (if (equal major-mode 'dired-mode)
-                                    (file-truename (dired-get-file-for-visit))
-                                  nil))))
+  (let ((file-for-info-buffer (filetree-find-file-or-dir))
+        (create-new-entry (if (buffer-file-name) t nil)))
     (if (and (buffer-live-p filetree-info-buffer)
              (window-live-p filetree-info-window))
         (filetree-close-info-buffer)
@@ -1954,9 +1951,7 @@ If SWITCH-TO-INFO-FLAG is true, then switch to the info window afterwards."
       (setq filetree-info-window
             (display-buffer-in-side-window filetree-info-buffer
                                            '((side . right))))
-      (if file-for-info-buffer
-          (filetree-update-info-buffer file-for-info-buffer)
-        (filetree-update-info-buffer))
+      (filetree-update-info-buffer file-for-info-buffer create-new-entry)
       (if switch-to-info-flag
           (select-window filetree-info-window)))))
 
@@ -1971,21 +1966,29 @@ If open, save before closing."
         (save-buffer)
         (kill-buffer filetree-info-buffer))))
 
+(defun filetree-find-file-or-dir ()
+  "Get file or directory at point from filetree, dired, or file buffer."
+  (cond
+   ;; dired buffer
+   ((equal major-mode 'dired-mode) (file-truename
+                                    (let ((file (condition-case nil
+                                                    (dired-get-file-for-visit)
+                                                  (error nil))))
+                                      (if (file-directory-p file)
+                                          (concat file "/")
+                                        file))))
+   ;; filetree buffer
+   ((equal (buffer-name) filetree-buffer-name) (filetree-get-name))
+   ;; file buffer
+   ((buffer-file-name) (buffer-file-name))))
+    
 (defun filetree-create-note (&optional file-or-dir)
   "Open note for FILE-OR-DIR if given.
 If file-or-dir not given find file at point from filetree buffer, dired or file buffer,
 and create a new note if one doesn't exist."
   (interactive)
-  (let ((cur-file
-         (expand-file-name
-          (or file-or-dir
-              (cond
-               ;; dired buffer
-               ((equal major-mode 'dired-mode) (file-truename (dired-get-file-for-visit)))
-               ;; filetree buffer
-               ((equal (buffer-name) filetree-buffer-name) (filetree-get-name))
-               ;; file buffer
-               ((buffer-file-name) (buffer-file-name)))))))
+  (let ((cur-file (expand-file-name
+                   (or file-or-dir (filetree-find-file-or-dir)))))
     (if (not cur-file)
         (error "Must be in a file buffer, dired buffer, or filetree buffer"))
     ;; disable preview buffer first
@@ -1999,15 +2002,14 @@ and create a new note if one doesn't exist."
 
 (defun filetree-update-info-buffer (&optional current-file-name create-new-entry-flag)
   "Update info buffer contents to reflect CURRENT-FILE-NAME.
-If CURENT-FILE-NAME not given use 'buffer-file-name'.
+If CURENT-FILE-NAME not given get from `filetree-find-file-or-dir`.
 If CREATE-NEW-ENTRY-FLAG is set or there is no entry in info buffer for this file, 
 create new info buffer entry."
   ;; TODO: clean up
   (if (and (buffer-live-p filetree-info-buffer)
            (window-live-p filetree-info-window))
-      (let ((filetree-create-new-entry (or create-new-entry-flag (if current-file-name nil t)))
-            (filetree-info-buffer-new nil))
-        (unless current-file-name (setq current-file-name (buffer-file-name)))
+      (let ((filetree-info-buffer-new nil))
+        (unless current-file-name (setq current-file-name (filetree-find-file-or-dir)))
         (unless current-file-name (setq current-file-name "No File Note Entry"))
         (let ((current-window (selected-window))
               (local-notes-file nil))
@@ -2039,12 +2041,16 @@ create new info buffer entry."
                 (widen)
                 (goto-char (point-min))
                 (unless (search-forward search-string nil t)
-                  (if filetree-create-new-entry
+                  (if create-new-entry-flag
                       (progn
                         (message "creating new entry")
                         (goto-char (point-max))
                         (let ((filename (car (last (split-string current-file-name "/") 1))))
-                          (insert "\n" "* [[" current-file-name "][" filename "]]\n")))
+                          (if (string= filename "")
+                              ;; if directory use full path
+                              (insert "\n" "* [[" current-file-name "][" current-file-name "]]\n")
+                            ;; for file just use the filename without path
+                            (insert "\n" "* [[" current-file-name "][" filename "]]\n"))))
                     (unless (search-forward "* [[No File Note Entry]" nil t)
                       (progn
                         (message "creating No File Note Entry")

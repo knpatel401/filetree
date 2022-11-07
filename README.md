@@ -226,9 +226,7 @@ The same command will open and close (after saving) the notes buffer in the side
 To create a new note from the file at point in the *filetree* buffer, a *dired* buffer or a file buffer, use the command `filetree-create-note`.  If you would like to have the notes update as you navigate through *dired* buffers (as they do in the *filetree* buffer), you can add the following advice call in your `.emacs`:
 ```
 (advice-add 'dired-next-line :after
-            (lambda (&rest args)
-              (filetree-update-info-buffer
-               (file-truename (dired-get-file-for-visit)))))
+            (lambda (&rest args) (filetree-update-info-buffer)))
 ```
 
 Within the *filetree* buffer, the *i* key will toggle the side window with the notes file.  The notes will dynamically narrow to the relevant part of the file as the user navigates the file tree and will also switch to/from the local org-mode file if applicable.  If there is no note entry for the file, then the message "*No File Note Entry*" will be shown in the side window.
