@@ -510,16 +510,15 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
 
 (defun filetree--submenu-setup-children (_)
   "Setup submenu selections."
+  (transient-parse-suffixes
+   'filetree-command-help
    (mapcar (lambda (x)
-             (car
-             (transient--parse-child
-              'filetree-command-help
               (append (list (car (where-is-internal
                                   (if (car x)
                                       (car x)
                                     (nth 2 x))
                                   filetree-mode-map)))
-                      (cdr x)))))
+                      (cdr x)))
            '((nil "View modes       - commands to change view" filetree-view-mode-menu)
              (nil "Load cmds        - commands to load filetree from different sources"
                   filetree-load-cmd-menu)
@@ -532,7 +531,7 @@ This is used if the file doesn't match any regex in `filetree-filetype-list'."
                   filetree-expand)
              (nil "Expand dir recursively"
                   filetree-expand-recursively)
-             (filetree-command-help "Exit help" transient-quit-all))))
+             (filetree-command-help "Exit help" transient-quit-all)))))
 
 (defun filetree--transient-heading (title comment)
   "Help function for transient TITLE and COMMENT."
@@ -547,14 +546,13 @@ CHILD-LIST is a list of children to show in the transient menu.  Each
 entry of the list has the following:
 - Label to show
 - function to call
-- any additional entries to send to transient--parse-child."
-  (mapcar (lambda (x)
-            (car
-             (transient--parse-child
-              'filetree-load-cmd-menu
-              (append (list (car (where-is-internal (nth 1 x) filetree-mode-map)))
-                      x))))
-          child-list))
+- any additional entries to send to transient--parse-suffixes."
+  (transient-parse-suffixes
+   'transient--prefix ;;'filetree-load-cmd-menu
+   (mapcar (lambda (x)
+             (append (list (car (where-is-internal (nth 1 x) filetree-mode-map)))
+                     x))
+           child-list)))
   
 (defun filetree--navigation-menu-setup-children (_)
   "Helper function to generate setup-children for navigation menu."
@@ -580,9 +578,9 @@ entry of the list has the following:
                                ;; ("Open in other win" filetree-open-in-other-window :transient t)))
    ;; special handling because if point on file,
    ;; :transient should be nil and for dir :transient should be t
-   (transient--parse-child
+   (transient-parse-suffixes
     'filetree-command-help
-    '("<RET>" "open/narrow" filetree-open-or-narrow :transient t))))
+    [("<RET>" "open/narrow" filetree-open-or-narrow :transient t)])))
 
 (transient-define-prefix filetree-view-mode-menu ()
   "Transient for view modes"
@@ -654,29 +652,27 @@ entry of the list has the following:
 
 (defun filetree--filter-regex-setup-children (_)
   "Setup regex filter functions."
+  (transient-parse-suffixes
+   'filetree-filter
    (mapcar (lambda (x)
-             (car
-             (transient--parse-child
-              'filetree-filter
               (list (car x)
                     (nth 1 x)
                     (lambda ()
                       (interactive)
-                      (filetree-filter-by-regex (nth 2 x)))))))
-           filetree-filetype-list))
+                      (filetree-filter-by-regex (nth 2 x)))))
+           filetree-filetype-list)))
 
 (defun filetree--filter-custom-setup-children (_)
   "Setup custom filter functions."
+  (transient-parse-suffixes
+   'filetree-filter
    (mapcar (lambda (x)
-             (car
-             (transient--parse-child
-              'filetree-filter
               (list (car x)
                     (nth 1 x)
                     (lambda ()
                       (interactive)
-                      (filetree--run-custom-function (nth 2 x)))))))
-           filetree-custom-filelist-operations))
+                      (filetree--run-custom-function (nth 2 x)))))
+           filetree-custom-filelist-operations)))
 
 (defun filetree-expand-dir (&optional dir regex recursive)
   "Add files in DIR to `filetree-current-file-list'.
@@ -739,16 +735,15 @@ Prompt user for regular expression."
 
 (defun filetree--expand-setup-children (_)
   "Setup regex expansion functions."
+  (transient-parse-suffixes
+   'filetree-expand
    (mapcar (lambda (x)
-             (car
-              (transient--parse-child
-              'filetree-expand
               (list (car x)
                     (nth 1 x)
                     (lambda ()
                       (interactive)
-                      (filetree-expand-dir nil (nth 2 x)))))))
-           filetree-filetype-list))
+                      (filetree-expand-dir nil (nth 2 x)))))
+           filetree-filetype-list)))
 
 ;; wrapper function
 (defun filetree-expand-dir-recursive-custom ()
@@ -775,16 +770,15 @@ TODO: combine with filetree-expand."
 
 (defun filetree--expand-recursive-setup-children (_)
   "TODO: combine with filetree--expand-setup-children."
+  (transient-parse-suffixes
+   'filetree-expand-recursively
    (mapcar (lambda (x)
-             (car
-             (transient--parse-child
-              'filetree-expand-recursively
               (list (car x)
                     (nth 1 x)
                     (lambda ()
                       (interactive)
-                      (filetree-expand-dir nil (nth 2 x) t))))))
-           filetree-filetype-list))
+                      (filetree-expand-dir nil (nth 2 x) t))))
+           filetree-filetype-list)))
 
 (transient-define-prefix filetree-load-cmd-menu ()
   "Transient for show commands."
@@ -811,16 +805,15 @@ TODO: combine with filetree-expand."
 
 (defun filetree--ops-custom-setup-children (_)
   "Setup custom filter functions."
+  (transient-parse-suffixes
+   'filetree-file-ops-menu
    (mapcar (lambda (x)
-             (car
-             (transient--parse-child
-              'filetree-file-ops-menu
               (list (car x)
                     (nth 1 x)
                     (lambda ()
                       (interactive)
-                      (filetree--run-custom-single-op (nth 2 x)))))))
-           filetree-custom-single-operations))
+                      (filetree--run-custom-single-op (nth 2 x)))))
+           filetree-custom-single-operations)))
 
 (transient-define-prefix filetree-file-ops-menu ()
   "Transient for operations on file/dir at point."
@@ -839,16 +832,15 @@ TODO: combine with filetree-expand."
 
 (defun filetree--marked-ops-custom-setup-children (_)
   "Setup custom filter functions."
+  (transient-parse-suffixes
+   'filetree-file-ops-menu
    (mapcar (lambda (x)
-             (car
-             (transient--parse-child
-              'filetree-file-ops-menu
               (list (car x)
                     (nth 1 x)
                     (lambda ()
                       (interactive)
-                      (funcall (nth 2 x) filetree-marked-file-list))))))
-           filetree-custom-marked-file-operations))
+                      (funcall (nth 2 x) filetree-marked-file-list))))
+           filetree-custom-marked-file-operations)))
 
 (transient-define-prefix filetree-mark-cmd-menu ()
   "Transient for mark commands"
