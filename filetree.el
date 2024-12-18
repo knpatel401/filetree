@@ -77,7 +77,7 @@
   :group 'files
   :prefix "filetree-")
 
-(defvar filetree-version "1.1")
+(defvar filetree-version "1.2")
 
 (defconst filetree-buffer-name "*filetree*")
 
