@@ -5,8 +5,8 @@
 ;; Author: Ketan Patel <knpatel401@gmail.com>
 ;; URL: https://github.com/knpatel401/filetree
 ;; Package-Requires: ((dash "2.12.0") (helm "3.7.0")
-;;                    (seq "2.23") (transient "0.3.6"))
-;; Version: 1.1
+;;                    (seq "2.23") (transient "0.4.0"))
+;; Version: 1.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
