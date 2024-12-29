@@ -298,6 +298,8 @@ Users can define custom operations on a list of marked files by adding to the cu
 The variable *filetree-exclude-list* is a list of regex for files to ignore.  The marks used to draw the file trees can be customized.  These can be found in the customization group *filetree-symb-for*.  The default face is specified by *filetree-default-file-face*.
 
 # Versions
+* **v1.2**
+    * Fix for compatibility issue with newer versions of transient -- now requires v0.4.0
 * **v1.1**
     * Transient based hierarchical key bindings & help menus (note some key bindings have changed)
     * Improved flat view (show additional info, marks)
